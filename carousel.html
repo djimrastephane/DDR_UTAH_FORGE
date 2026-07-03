@@ -1,0 +1,138 @@
+<style>
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.slide-anim { animation: fadeSlide 0.22s ease-out; }
+</style>
+<div id="carousel-root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script>
+(function(){
+const{useState,createElement:h}=React;
+
+const C={
+  bg:"#020810",surf:"#0A1728",amber:"#F59E0B",teal:"#0BBFA9",
+  text:"#E2E8F0",muted:"#94A3B8",border:"rgba(148,163,184,0.2)"
+};
+const F={d:"'Oswald',sans-serif",b:"'Barlow',sans-serif"};
+
+function SlideWrap({children,num}){
+  return h("div",{className:"slide-anim",style:{background:C.bg,width:"100%",height:"100%",padding:"40px",boxSizing:"border-box",display:"flex",flexDirection:"column",fontFamily:F.b,position:"relative"}},
+    h("div",{style:{position:"absolute",top:20,right:30,color:C.muted,fontSize:12,fontFamily:"monospace"}},`0${num} / 06`),
+    children
+  );
+}
+
+const Slide1=()=>h(SlideWrap,{num:1},
+  h("h1",{style:{fontSize:40,color:"#fff",lineHeight:1.1,marginBottom:30}},"Hidden drilling risks don't live in dashboards. They live in daily drilling reports."),
+  h("div",{style:{display:"flex",gap:40,marginTop:20}},
+    [{v:"170+",l:"DDRs analysed"},{v:"221",l:"Events extracted"},{v:"Auto",l:"Risk identification"}].map(item=>h("div",{key:item.l},
+      h("div",{style:{fontSize:48,fontWeight:700,color:C.amber}},item.v),
+      h("div",{style:{color:C.muted}},item.l)
+    ))
+  )
+);
+
+const Slide2=()=>h(SlideWrap,{num:2},
+  h("h2",{style:{fontSize:32,color:"#fff",marginBottom:20}},"The challenge"),
+  h("p",{style:{color:C.text,fontSize:18,marginBottom:30}},"Most drilling knowledge remains trapped inside:"),
+  h("ul",{style:{listStyle:"none",padding:0}},["DDR narratives","Operational notes","Lessons learned","Handover comments"].map(i=>h("li",{key:i,style:{fontSize:18,marginBottom:12,display:"flex",alignItems:"center"}},h("span",{style:{color:C.amber,marginRight:10}},"●"),i))),
+  h("div",{style:{marginTop:40,background:C.surf,padding:20,borderRadius:8,border:`1px solid ${C.border}`}},
+    h("div",{style:{fontWeight:600,color:C.text}},"Traditional review:"),
+    h("div",{style:{color:C.muted,marginTop:5}},"Hundreds of pages · Manual interpretation · Inconsistent knowledge reuse")
+  )
+);
+
+const Slide3=()=>h(SlideWrap,{num:3},
+  h("h2",{style:{fontSize:32,color:"#fff",marginBottom:30}},"Turning text into intelligence"),
+  ["DDRs","NLP Event Extraction","Risk Classification","Engineering Insights"].map((step,i)=>h("div",{key:i},
+    h("div",{style:{padding:"15px",background:C.surf,borderRadius:6,textAlign:"center",border:`1px solid ${C.border}`}},step),
+    i<3&&h("div",{style:{textAlign:"center",color:C.muted,padding:"5px 0"}},"↓")
+  )),
+  h("div",{style:{marginTop:30,color:C.text}},"Examples extracted: Overpull, Restriction, Mud Loss, High ECD, Equipment Failure.")
+);
+
+const EventChart=()=>{
+  const W=420,H=168,ml=36,mr=8,mt=8,mb=22;
+  const cw=W-ml-mr,ch=H-mt-mb;
+  const x=d=>ml+(d/166)*cw, y=p=>mt+(p/100)*ch;
+  const dia=(cx,cy,r)=>`${cx},${cy-r} ${cx+r},${cy} ${cx},${cy+r} ${cx-r},${cy}`;
+  // [day, depthPct, type]  0=overpull-Low 1=overpull-Med 2=overpull-High 3=restriction 4=formation 5=mud_loss
+  const D=[
+    [3,3,3],[6,4,3],[12,8,0],[18,9,0],[25,5,2],
+    [26,28,0],[30,35,0],[36,45,0],[40,55,0],[42,60,0],
+    [46,63,4],[48,64,1],[50,66,4],[53,67,3],[55,69,1],
+    [58,71,4],[60,72,1],[62,73,3],[64,75,4],[65,74,0],
+    [67,76,4],[68,77,1],[70,78,4],[72,77,2],[74,79,4],
+    [76,81,4],[78,82,1],[80,83,4],[83,84,0],[85,85,4],
+    [86,92,5],[88,92,5],
+    [89,86,4],[91,83,0],[95,81,1],[98,82,0],[101,79,1],
+    [105,80,0],[108,77,1],[111,83,4],[113,85,1],
+    [118,65,0],[122,68,1],[127,70,3],[131,72,0],[136,75,0],
+    [141,78,1],[146,80,0],[151,76,0],[156,79,0],[161,72,1]
+  ];
+  const PH=[{d:24,c:"#1E88E5"},{d:33,c:"#43A047"},{d:45,c:"#FB8C00"},{d:116,c:"#8E24AA"}];
+  const SH=[9.5,29.8,63.1,100];
+  const mkr=(d,p,t,i)=>{
+    const cx=x(d),cy=y(p);
+    if(t===0)return h("circle",{key:i,cx,cy,r:3,fill:"#1976D2",opacity:0.75});
+    if(t===1)return h("circle",{key:i,cx,cy,r:6,fill:"#E65100",opacity:0.82});
+    if(t===2)return h("circle",{key:i,cx,cy,r:10,fill:"#B71C1C",opacity:0.88,stroke:"rgba(255,255,255,0.4)",strokeWidth:1.5});
+    if(t===3)return h("polygon",{key:i,points:dia(cx,cy,6),fill:"#F59E0B",opacity:0.90});
+    if(t===4)return h("text",{key:i,x:cx,y:cy+4,textAnchor:"middle",fontSize:12,fill:"#7B1FA2",opacity:0.85},"★");
+    if(t===5)return h("rect",{key:i,x:cx-5,y:cy-5,width:10,height:10,fill:"#1565C0",opacity:0.92,rx:1});
+    return null;
+  };
+  return h("svg",{viewBox:`0 0 ${W} ${H}`,style:{width:"100%",display:"block",borderRadius:6,marginBottom:12}},
+    h("rect",{x:0,y:0,width:W,height:H,fill:C.surf,rx:6}),
+    h("rect",{x:ml,y:y(80),width:cw,height:y(90)-y(80),fill:"rgba(123,31,162,0.12)"}),
+    h("text",{x:ml+cw-4,y:y(82),textAnchor:"end",fontSize:8,fill:"rgba(155,89,182,0.85)"},"Formation risk zone"),
+    ...SH.map((p,i)=>h("line",{key:`sh${i}`,x1:ml,x2:ml+cw,y1:y(p),y2:y(p),stroke:"rgba(148,163,184,0.18)",strokeWidth:1,strokeDasharray:"3,3"})),
+    ...PH.map((ph,i)=>h("line",{key:`ph${i}`,x1:x(ph.d),x2:x(ph.d),y1:mt,y2:mt+ch,stroke:ph.c,strokeWidth:1,strokeDasharray:"4,3",opacity:0.45})),
+    ...D.map(([d,p,t],i)=>mkr(d,p,t,`e${i}`)),
+    h("line",{x1:ml,x2:ml,y1:mt,y2:mt+ch,stroke:"rgba(148,163,184,0.30)",strokeWidth:1}),
+    h("line",{x1:ml,x2:ml+cw,y1:mt+ch,y2:mt+ch,stroke:"rgba(148,163,184,0.30)",strokeWidth:1}),
+    h("text",{x:ml-4,y:y(0)+4,textAnchor:"end",fontSize:8,fill:C.muted},"Surface"),
+    h("text",{x:ml-4,y:y(50)+4,textAnchor:"end",fontSize:8,fill:C.muted},"50%"),
+    h("text",{x:ml-4,y:y(100),textAnchor:"end",fontSize:8,fill:C.muted},"TD"),
+    h("text",{x:ml,y:mt+ch+14,textAnchor:"middle",fontSize:8,fill:C.muted},"Day 1"),
+    h("text",{x:x(83),y:mt+ch+14,textAnchor:"middle",fontSize:8,fill:C.muted},"Day 83"),
+    h("text",{x:ml+cw,y:mt+ch+14,textAnchor:"middle",fontSize:8,fill:C.muted},"Day 166")
+  );
+};
+
+const Slide4=()=>h(SlideWrap,{num:4},
+  h("h2",{style:{fontSize:28,color:"#fff",marginBottom:10}},"Where operational risk concentrates"),
+  h(EventChart),
+  ["Formation risk interval (80–90% depth)","Repeated restrictions across phases","Severe overpull — production section"].map(i=>h("div",{key:i,style:{padding:"7px 0",borderBottom:`1px solid ${C.border}`,fontSize:13}},`✔ ${i}`)),
+  h("p",{style:{marginTop:12,fontStyle:"italic",color:C.muted,fontSize:12}},"Recurring challenges become visible immediately — not buried across hundreds of reports.")
+);
+
+const Slide5=()=>h(SlideWrap,{num:5},
+  h("h2",{style:{fontSize:32,color:"#fff",marginBottom:30}},"What decisions does this support?"),
+  h("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:15}},
+    ["Offset well reviews","Risk register generation","Lessons learned capture","Campaign benchmarking","Knowledge retention"].map(i=>h("div",{key:i,style:{padding:"15px",background:C.surf,borderRadius:6}},`✨ ${i}`))
+  )
+);
+
+const Slide6=()=>h(SlideWrap,{num:6},
+  h("h2",{style:{fontSize:32,color:"#fff",marginBottom:20}},"Why I built this"),
+  h("p",{style:{color:C.text,fontSize:16,lineHeight:1.6}},"Coming from 17+ years in completions and well intervention, I saw first-hand how much operational knowledge remains buried inside reports."),
+  h("p",{style:{color:C.text,fontSize:16,lineHeight:1.6,marginTop:20}},"This project combines Drilling Engineering, Data Science, and NLP to transform historical drilling data into actionable decision support.")
+);
+
+const SLIDES=[Slide1,Slide2,Slide3,Slide4,Slide5,Slide6];
+
+function App(){
+  const [cur,setCur]=useState(0);
+  const Comp=SLIDES[cur];
+  return h("div",{style:{background:"#000",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",padding:"50px"}},
+    h("div",{style:{width:500,height:500,borderRadius:10,overflow:"hidden",border:`1px solid ${C.border}`}},h(Comp)),
+    h("div",{style:{marginTop:20}},
+      h("button",{onClick:()=>setCur(c=>Math.max(0,c-1))},"Prev"),
+      h("button",{onClick:()=>setCur(c=>Math.min(5,c+1)),style:{marginLeft:10}},"Next")
+    )
+  );
+}
+ReactDOM.createRoot(document.getElementById("carousel-root")).render(h(App));
+})();
+</script>

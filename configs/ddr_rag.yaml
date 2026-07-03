@@ -1,0 +1,62 @@
+# Project defaults for Utah FORGE Daily Drilling Report (DDR) processing.
+# The CLI scripts still take command-line arguments directly; this file records
+# the intended defaults for this repository.
+
+project:
+  name: DDR_UTAH_FORGE
+  field_name: UtahForge
+  wellbore: FORGE-16A-78-32
+  profile: utah_forge
+
+paths:
+  raw_pdf_dir: data/raw
+  processed_dir: data/processed
+  field_dir: data/fields/UtahForge
+  model_dir: models/all-MiniLM-L6-v2
+
+preprocess:
+  chunk_size_tokens: 224
+  chunk_overlap_tokens: 56
+  table_chunking: row_blocks
+  table_page_backup_text_chunks: true
+  table_extract_return_all_tables: true
+  region_diagnostics: true
+
+extraction:
+  # Built-ins are registered in code: Utah FORGE first, generic DDR fallback last.
+  # Add new report-layout extractors here as "package.module:ClassName" entries.
+  extra_extractor_classes: []
+
+ddr_profile:
+  document_markers:
+    - Daily Well Operation
+    - DRILLING ORIGINAL
+    - OPERATION SUMMARY
+  header_fields:
+    - report_date
+    - report_no
+    - job_start
+    - well_name
+    - report_status
+    - contractor
+    - rig
+    - water_depth_ft
+  sections:
+    - operation_summary
+    - personnel_data
+    - weather
+    - planned_time_summary
+    - materials
+    - support_vessels
+    - formation_data
+    - general_notes
+
+retrieval:
+  default_top_k: 10
+  preferred_filters:
+    - report_date
+    - well_name
+    - rig
+    - section
+    - phase
+    - operation_code

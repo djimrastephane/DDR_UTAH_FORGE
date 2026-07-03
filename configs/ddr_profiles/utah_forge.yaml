@@ -1,0 +1,94 @@
+# DDR Profile - Utah FORGE
+# Calibrated for Utah FORGE 16A(78)-32 drilling/completion report filenames.
+
+profile:
+  name: "Utah FORGE"
+  description: "Utah FORGE 16A(78)-32 geothermal drilling and completion DDR corpus"
+  version: "1.0"
+  ddr_software: "Unknown"
+
+filename:
+  # Named groups are used for profile detection. The filename QC module contains
+  # project-specific date normalisation for compact unpadded date pairs.
+  pattern: >-
+    ^Utah_Forge_
+    (?P<well_name>FORGE_16A_[\[(](?P<pad>\d+)[\])]-(?P<slot>\d+))_
+    (?P<operation_phase>[A-Za-z]+)-C_
+    (?P<date_blob>\d{6,16})
+    (?:_(?P<date_blob_2>\d{6,8}))?_
+    (?P<source_report_no>\d+)
+    (?P<source_revision>_\d+)?_
+    (?P<tmp_kind>reporttmp|tmp)
+    (?P<copy_marker>\s+2)?\.pdf$
+  flags: IGNORECASE
+  date_format: "%m%d%Y"
+  doc_id_template: "UtahForge-DDR-FORGE-16A-78-32-{operation_phase}-{date_iso}-R{source_report_no}"
+
+wellbore:
+  block_field: "well_name"
+  suffix_labels:
+    "16A-78-32": "FORGE 16A(78)-32"
+
+header:
+  top_band_max_y: 90
+  grid_band: [70, 220]
+  narrative_band: [180, 420]
+  field_labels:
+    report_date: ["report date", "date"]
+    report_no: ["report no", "report number"]
+    wellbore: ["well", "well name"]
+    rig_name: ["rig", "rig name"]
+    field_name: ["field", "project"]
+    end_depth_md_ft: ["measured depth", "md", "depth"]
+    daily_cost: ["daily cost"]
+    cumulative_cost: ["cumulative cost", "cum cost"]
+    morning_report_ops: ["morning report", "current operations"]
+    forecast_24hr: ["24 hr forecast", "24hr forecast", "forecast"]
+    last_24hr_summary: ["last 24 hr", "last 24hr", "operations summary"]
+
+op_summary:
+  section_headers: ["OPERATION SUMMARY", "DAILY OPERATIONS", "ACTIVITY SUMMARY"]
+  columns:
+    start_time: ["start time", "from"]
+    end_time: ["end time", "to"]
+    duration_hr: ["duration", "dur", "hours"]
+    phase: ["phase", "operation phase", "section"]
+    op_code: ["op code", "operation code"]
+    activity_code: ["activity code", "activity"]
+    pt_x: ["p-t-x", "ptx", "time code"]
+    operation: ["operation", "activity description", "description", "comments"]
+  required_columns: ["start_time", "dur_hr", "operation"]
+  shift_separator_pattern: "\\d{1,2}:\\d{2}\\s*-\\s*\\d{1,2}:\\d{2}"
+  default_shift_label: "00:00-24:00"
+
+phases:
+  order:
+    - No Activity
+    - Rig Move In
+    - Surface Drilling
+    - Surface Casing
+    - Intermediate Drilling
+    - Intermediate Casing
+    - Production Drilling
+    - Production Casing
+    - Drillout
+  labels:
+    No Activity: "No Activity"
+    Rig Move In: "Rig Move In"
+    Surface Drilling: "Surface Drilling"
+    Surface Casing: "Surface Casing"
+    Intermediate Drilling: "Intermediate Drilling"
+    Intermediate Casing: "Intermediate Casing"
+    Production Drilling: "Production Drilling"
+    Production Casing: "Production Casing"
+    Drillout: "Drillout"
+  typically_high_npt: [Production Drilling]
+  benchmark_phases: []
+
+general_notes:
+  ditch_magnet:
+    enabled: false
+  annulus_pressures:
+    enabled: false
+  ctu_tension:
+    enabled: false

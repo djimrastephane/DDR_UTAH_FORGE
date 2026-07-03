@@ -1,0 +1,667 @@
+# DDR vocabulary configuration
+# -----------------------------------------------------------------------
+# Edit this file to add new terms, abbreviations, or code labels.
+# No code changes needed — vocab.py reloads this at import time.
+#
+# compound_terms: matched left-to-right, longest/most-specific first.
+#   Each entry: {from: "source phrase", to: "canonical-form"}
+#
+# abbreviation_map: matched after compound substitution.
+#   Each entry: {abbr: "ABBR", expands_to: "canonical-form"}
+#   Set expands_to to null to drop the token entirely.
+# -----------------------------------------------------------------------
+
+min_token_len: 3
+
+# ---------------------------------------------------------------------------
+# Stop words
+# English function words + DDR operational filler that carry no
+# graph-edge information.
+# ---------------------------------------------------------------------------
+stop_words:
+  # English function words
+  - the
+  - and
+  - with
+  - from
+  - for
+  - into
+  - onto
+  - upon
+  - that
+  - this
+  - then
+  - when
+  - whilst
+  - while
+  - after
+  - before
+  - during
+  - where
+  - which
+  - using
+  - until
+  - over
+  - all
+  - any
+  - per
+  - out
+  - "off"
+  - via
+  - due
+  - its
+  - their
+  - they
+  - were
+  - was
+  - has
+  - had
+  - have
+  - been
+  - not
+  - but
+  - are
+  - can
+  - may
+  - will
+  - also
+  - both
+  - each
+  - such
+  - only
+  - than
+  - thus
+  - once
+  - well
+  - good
+  # Plain English words that appear as uppercase table headers
+  - safety
+  - data
+  - checks
+  # Positional / directional (too generic standalone)
+  - down
+  - back
+  - above
+  - below
+  - lower
+  - upper
+  - mid
+  - through
+  - across
+  - between
+  - prior
+  # Generic verbs — filler with no graph-edge value
+  - note
+  - notes
+  - held
+  - hold
+  - concurrently
+  - simultaneously
+  - confirmed
+  - observed
+  - noted
+  - recorded
+  - commenced
+  - continued
+  - completed
+  - performed
+  - installed
+  - removed
+  - rigged
+  - picked
+  - pumped
+  - bled
+  - lined
+  - monitored
+  - opened
+  - closed
+  - laid
+  - pulled
+  - broke
+  - staged
+  - flushed
+  - required
+  - attempted
+  - prepared
+  - checked
+  - set
+  - setting
+  - instruction
+  - instructions
+  - additional
+  - associated
+  - applicable
+  - available
+  - successful
+  - successfully
+  - approximately
+  - approx
+  - including
+  - following
+  - providing
+  - correct
+  - correctly
+  - minutes
+  - hours
+  - seconds
+  - stand
+  - stands
+  # Ubiquitous procedural terms — zero discrimination
+  - job-safety-analysis
+  # Too generic standalone — specific compound forms already captured
+  - running
+  - surface
+  - equipment
+  - increased
+  - assembly
+  - decrease
+  - decreased
+  - string
+
+# ---------------------------------------------------------------------------
+# Engineering unit tokens
+# Removed as standalone tokens — too noisy as graph nodes.
+# ---------------------------------------------------------------------------
+unit_tokens:
+  - ft
+  - ftoth
+  - tvd
+  - md
+  - psi
+  - ppg
+  - ppge
+  - bpm
+  - gpm
+  - rpm
+  - klbs
+  - lbs
+  - kips
+  - bbls
+  - bbl
+  - gal
+  - kft
+  - mins
+  - min
+  - hrs
+  - btu
+  - kw
+  - kwh
+
+# ---------------------------------------------------------------------------
+# Compound terms
+# Applied before tokenisation — order matters (longest/most-specific first).
+# ---------------------------------------------------------------------------
+compound_terms:
+  # Operational events
+  - {from: "lost circulation",         to: "lost-circulation"}
+  - {from: "loss of circulation",      to: "lost-circulation"}
+  - {from: "fluid loss",               to: "lost-circulation"}
+  - {from: "stuck pipe",               to: "stuck-pipe"}
+  - {from: "differential sticking",    to: "differential-sticking"}
+  - {from: "tight hole",               to: "tight-hole"}
+  - {from: "tight-hole",               to: "tight-hole"}
+  - {from: "pack off",                 to: "pack-off"}
+  - {from: "wellbore influx",          to: "wellbore-influx"}
+  - {from: "string shot",              to: "string-shot"}
+  - {from: "back reaming",             to: "backream"}
+  - {from: "back-reaming",             to: "backream"}
+  - {from: "back ream",                to: "backream"}
+  - {from: "wiper trip",               to: "wiper-trip"}
+  - {from: "short trip",               to: "short-trip"}
+  - {from: "conditioning trip",        to: "conditioning-trip"}
+  - {from: "wash over",                to: "washover"}
+  - {from: "wash-over",                to: "washover"}
+  - {from: "pressure test",            to: "pressure-test"}
+  - {from: "pressure tested",          to: "pressure-test"}
+  - {from: "pressure testing",         to: "pressure-test"}
+  - {from: "function test",            to: "function-test"}
+  - {from: "function tested",          to: "function-test"}
+  - {from: "leak off test",            to: "lot"}
+  - {from: "leak-off test",            to: "lot"}
+  - {from: "formation integrity test", to: "fit"}
+  - {from: "integrity test",           to: "integrity-test"}
+  - {from: "bottoms up",               to: "bottoms-up"}
+  - {from: "sweep pill",               to: "sweep"}
+  - {from: "lost time incident",       to: "lti"}
+  - {from: "job safety analysis",      to: "jsa"}
+  # Equipment compound nouns
+  - {from: "frac sleeve",              to: "frac-sleeve"}
+  - {from: "fracture sleeve",          to: "frac-sleeve"}
+  - {from: "trip tank",                to: "trip-tank"}
+  - {from: "wash pipe",                to: "wash-pipe"}
+  - {from: "cement unit",              to: "cement-unit"}
+  - {from: "rig floor",                to: "rig-floor"}
+  - {from: "blow out preventer",       to: "bop"}
+  - {from: "blowout preventer",        to: "bop"}
+  - {from: "rotating head",            to: "rotating-head"}
+  - {from: "annular preventer",        to: "annular"}
+  - {from: "blind rams",               to: "blind-rams"}
+  - {from: "pipe rams",                to: "pipe-rams"}
+  - {from: "shear rams",               to: "shear-rams"}
+  - {from: "kelly bushing",            to: "kelly-bushing"}
+  - {from: "drill string",             to: "drill-string"}
+  - {from: "drill pipe",               to: "drill-pipe"}
+  - {from: "drill collar",             to: "drill-collar"}
+  - {from: "heavy weight drill pipe",  to: "hwdp"}
+  - {from: "jar",                      to: "jar"}
+  - {from: "shock sub",                to: "shock-sub"}
+  - {from: "float collar",             to: "float-collar"}
+  - {from: "float shoe",               to: "float-shoe"}
+  - {from: "centralizer",              to: "centralizer"}
+  - {from: "scratchers",               to: "scratchers"}
+  - {from: "tail pipe",                to: "tail-pipe"}
+  - {from: "bore",                     to: "bore"}
+  - {from: "nipple up",                to: "nipple-up"}
+  - {from: "nipple down",              to: "nipple-down"}
+  - {from: "x-tree",                   to: "x-tree"}
+  - {from: "christmas tree",           to: "x-tree"}
+  - {from: "choke manifold",           to: "choke-manifold"}
+  - {from: "kill line",                to: "kill-line"}
+  - {from: "choke line",               to: "choke-line"}
+  - {from: "standpipe",                to: "standpipe"}
+  - {from: "string weight",            to: "string-weight"}
+  - {from: "hook load",                to: "hookload"}
+  - {from: "top drive",                to: "top-drive"}
+  - {from: "mud motor",                to: "mud-motor"}
+  - {from: "mule shoe",                to: "mule-shoe"}
+  - {from: "magnet",                   to: "magnet"}
+  - {from: "sand screen",              to: "sand-screen"}
+  - {from: "gravel pack",              to: "gravel-pack"}
+  - {from: "sand control",             to: "sand-control"}
+  - {from: "completion fluid",         to: "completion-fluid"}
+  - {from: "kill fluid",               to: "kill-fluid"}
+  - {from: "brine",                    to: "brine"}
+  - {from: "spacer pill",              to: "spacer"}
+  - {from: "lead cement",              to: "lead-cement"}
+  - {from: "tail cement",              to: "tail-cement"}
+  - {from: "cement slurry",            to: "cement-slurry"}
+  # MPD / pressure management
+  - {from: "managed pressure drilling",       to: "mpd"}
+  - {from: "equivalent circulating density",  to: "ecd"}
+  - {from: "annular back pressure",           to: "abp"}
+  - {from: "surface back pressure",           to: "sbp"}
+  - {from: "rotating control device",         to: "rcd"}
+  - {from: "rotating control head",           to: "rcd"}
+  - {from: "choke position",                  to: "choke"}
+  # Mud / fluid
+  - {from: "oil based mud",      to: "oil-based-mud"}
+  - {from: "oil-based mud",      to: "oil-based-mud"}
+  - {from: "water based mud",    to: "water-based-mud"}
+  - {from: "mud weight",         to: "mud-weight"}
+  - {from: "mud returns",        to: "mud-returns"}
+  - {from: "flow check",         to: "flow-check"}
+  - {from: "flow rate",          to: "flowrate"}
+  # Directional
+  - {from: "tool face",          to: "toolface"}
+  - {from: "slide drilling",     to: "slide-drilling"}
+  - {from: "rotary drilling",    to: "rotary-drilling"}
+  - {from: "dog leg",            to: "dogleg"}
+  - {from: "dog-leg",            to: "dogleg"}
+  - {from: "build rate",         to: "build-rate"}
+  - {from: "turn rate",          to: "turn-rate"}
+  # Rigging
+  - {from: "rig up",             to: "rig-up"}
+  - {from: "rigged up",          to: "rig-up"}
+  - {from: "rig down",           to: "rig-down"}
+  - {from: "rigged down",        to: "rig-down"}
+  - {from: "make up",            to: "make-up"}
+  - {from: "made up",            to: "make-up"}
+  - {from: "break out",          to: "break-out"}
+  - {from: "broke out",          to: "break-out"}
+  - {from: "rack back",          to: "rack-back"}
+  - {from: "racked back",        to: "rack-back"}
+  - {from: "lay out",            to: "lay-out"}
+  - {from: "laid out",           to: "lay-out"}
+  - {from: "run in hole",        to: "rih"}
+  - {from: "run-in-hole",        to: "rih"}
+  - {from: "pull out of hole",   to: "pooh"}
+  - {from: "pull-out-of-hole",   to: "pooh"}
+  - {from: "pulled out of hole", to: "pooh"}
+  - {from: "slide",              to: "slide"}
+  - {from: "overpull",           to: "overpull"}
+  - {from: "drag",               to: "drag"}
+  - {from: "restriction",        to: "restriction"}
+  - {from: "flow restriction",   to: "restriction"}
+  - {from: "bled off",           to: "bleed-off"}
+  - {from: "broke circulation",  to: "break-circulation"}
+  - {from: "break circulation",  to: "break-circulation"}
+  - {from: "circulate out",      to: "circulate-out"}
+  - {from: "displaced",          to: "displace"}
+  - {from: "displace",           to: "displace"}
+  - {from: "pumped out",         to: "pump-out"}
+  - {from: "pump out",           to: "pump-out"}
+  # Op-code multi-token identifiers (can't be single-token abbreviations)
+  - {from: "whbo p",             to: "wellhead-bop"}
+  # Fluid quality
+  - {from: "bs&w",               to: "basic-sediment-and-water"}
+
+# ---------------------------------------------------------------------------
+# Abbreviation map
+# Applied after compound substitution, before tokenisation.
+# expands_to: null drops the token entirely.
+# ---------------------------------------------------------------------------
+abbreviation_map:
+  # Tripping operations
+  - {abbr: "rih",     expands_to: "rih"}
+  - {abbr: "pooh",    expands_to: "pooh"}
+  - {abbr: "poh",     expands_to: "pooh"}
+  # Bottom-hole equipment
+  - {abbr: "bha",     expands_to: "bha"}
+  - {abbr: "hwdp",    expands_to: "hwdp"}
+  - {abbr: "dp",      expands_to: "drill-pipe"}
+  - {abbr: "dc",      expands_to: "drill-collar"}
+  - {abbr: "jar",     expands_to: "jar"}
+  - {abbr: "mwd",     expands_to: "mwd"}
+  - {abbr: "lwd",     expands_to: "lwd"}
+  - {abbr: "rss",     expands_to: "rotary-steerable"}
+  - {abbr: "pdm",     expands_to: "mud-motor"}
+  # Surface equipment
+  - {abbr: "tdx",     expands_to: "top-drive"}
+  - {abbr: "bop",     expands_to: "bop"}
+  - {abbr: "rbop",    expands_to: "rotating-bop"}
+  - {abbr: "rcd",     expands_to: "rcd"}
+  - {abbr: "prs",     expands_to: "pipe-racking-system"}
+  - {abbr: "ctu",     expands_to: "casing-tieback-unit"}
+  # Wellbore / casing
+  - {abbr: "hpwhh",   expands_to: "hp-wellhead-housing"}
+  - {abbr: "whh",     expands_to: "wellhead-housing"}
+  - {abbr: "wh",      expands_to: "wellhead"}
+  # Mud system
+  - {abbr: "obm",     expands_to: "oil-based-mud"}
+  - {abbr: "wbm",     expands_to: "water-based-mud"}
+  - {abbr: "sbm",     expands_to: "synthetic-based-mud"}
+  - {abbr: "mw",      expands_to: "mud-weight"}
+  - {abbr: "pv",      expands_to: "plastic-viscosity"}
+  - {abbr: "yp",      expands_to: "yield-point"}
+  - {abbr: "av",      expands_to: "apparent-viscosity"}
+  - {abbr: "cl",      expands_to: "chlorides"}
+  # Pressure / MPD
+  - {abbr: "mpd",     expands_to: "mpd"}
+  - {abbr: "ecd",     expands_to: "ecd"}
+  - {abbr: "emw",     expands_to: "equivalent-mud-weight"}
+  - {abbr: "sbp",     expands_to: "surface-back-pressure"}
+  - {abbr: "abp",     expands_to: "annular-back-pressure"}
+  - {abbr: "fip",     expands_to: "formation-integrity-pressure"}
+  - {abbr: "maasp",   expands_to: "max-allowable-annular-surface-pressure"}
+  # Survey / directional
+  - {abbr: "inc",     expands_to: "inclination"}
+  - {abbr: "az",      expands_to: "azimuth"}
+  - {abbr: "tvd",     expands_to: "tvd"}
+  - {abbr: "md",      expands_to: "measured-depth"}
+  # Weight / force
+  - {abbr: "wob",     expands_to: "weight-on-bit"}
+  - {abbr: "sob",     expands_to: "set-weight"}
+  - {abbr: "puw",     expands_to: "pick-up-weight"}
+  - {abbr: "sow",     expands_to: "slack-off-weight"}
+  # Rate
+  - {abbr: "rop",     expands_to: "rop"}
+  - {abbr: "rpm",     expands_to: "rpm"}
+  - {abbr: "spp",     expands_to: "standpipe-pressure"}
+  # Completion service companies
+  - {abbr: "ncs",     expands_to: "ncs-multistage"}
+  # Downhole conditions
+  - {abbr: "toc",     expands_to: "top-of-cement"}
+  - {abbr: "tol",     expands_to: "top-of-liner"}
+  - {abbr: "td",      expands_to: "total-depth"}
+  # Well control
+  - {abbr: "sidpp",   expands_to: "shut-in-drill-pipe-pressure"}
+  - {abbr: "sicp",    expands_to: "shut-in-casing-pressure"}
+  - {abbr: "pit",     expands_to: "pit-gain"}
+  - {abbr: "fia",     expands_to: "flow-in-area"}
+  # HSE
+  - {abbr: "jsa",     expands_to: "job-safety-analysis"}
+  - {abbr: "hsse",    expands_to: "health-safety-environment"}
+  - {abbr: "ppe",     expands_to: "personal-protective-equipment"}
+  - {abbr: "lti",     expands_to: "lost-time-incident"}
+  - {abbr: "msw",     expands_to: "method-statement-of-work"}
+  # Completion specific
+  - {abbr: "x-tree",  expands_to: "x-tree"}
+  - {abbr: "xtree",   expands_to: "x-tree"}
+  - {abbr: "icd",     expands_to: "inflow-control-device"}
+  - {abbr: "iud",     expands_to: "inflow-control-device"}
+  - {abbr: "esp",     expands_to: "electric-submersible-pump"}
+  - {abbr: "dhsv",    expands_to: "downhole-safety-valve"}
+  - {abbr: "ssv",     expands_to: "surface-safety-valve"}
+  # Marine / vessels
+  - {abbr: "rov",     expands_to: "rov"}
+  - {abbr: "dsv",     expands_to: "dive-support-vessel"}
+  - {abbr: "psv",     expands_to: "platform-supply-vessel"}
+  # Drilling supervision roles
+  - {abbr: "sdsv",    expands_to: "senior-drilling-supervisor"}
+  - {abbr: "ndsv",    expands_to: "night-drilling-supervisor"}
+  - {abbr: "adsv",    expands_to: "assistant-drilling-supervisor"}
+  # OCR split artefacts — drop (TVD / ftOTH split across table columns)
+  - {abbr: "oth",     expands_to: null}
+  - {abbr: "tv",      expands_to: null}
+  - {abbr: "th",      expands_to: null}
+  # Service company — drop
+  - {abbr: "nsl",     expands_to: null}
+  # AFE reference number segments — drop (fragments of OC.GB.JRB.EX.DD.01.D cost code)
+  - {abbr: "gb",      expands_to: null}
+  - {abbr: "oc",      expands_to: null}
+  - {abbr: "jrb",     expands_to: null}
+  - {abbr: "ex",      expands_to: null}
+  # Other personnel shorthand — drop as uninformative for graph
+  - {abbr: "oe",      expands_to: null}
+  - {abbr: "co",      expands_to: null}
+  - {abbr: "dd",      expands_to: null}
+  - {abbr: "mwd/dd",  expands_to: null}
+  # Misc jargon
+  - {abbr: "c/w",     expands_to: "with"}
+  - {abbr: "w/",      expands_to: "with"}
+  - {abbr: "tbr",     expands_to: "to-be-confirmed"}
+  - {abbr: "tbc",     expands_to: "to-be-confirmed"}
+  # Financial
+  - {abbr: "afe",     expands_to: "authorization-for-expenditure"}
+  - {abbr: "rfe",     expands_to: "request-for-expenditure"}
+  # Well identifiers
+  - {abbr: "uwi",     expands_to: "unique-well-identifier"}
+  # Geometry
+  - {abbr: "od",      expands_to: "outer-diameter"}
+  # Geology
+  - {abbr: "mmu",     expands_to: "mid-miocene-unconformity"}
+  # Op-code identifiers
+  - {abbr: "rpcompupp", expands_to: "completion"}
+  - {abbr: "compzn",   expands_to: "completion-zone"}
+  - {abbr: "mpdcsg",   expands_to: "mpd-casing"}
+  - {abbr: "stim",     expands_to: "stimulation"}
+  - {abbr: "cement",   expands_to: "cementing"}
+  - {abbr: "whdbop",   expands_to: "wellhead-bop"}
+  - {abbr: "mpddrlg",  expands_to: "mpd-drilling"}
+  - {abbr: "drillout", expands_to: "drillout"}
+  - {abbr: "drill",    expands_to: "drilling"}
+  - {abbr: "casing",   expands_to: "casing"}
+  - {abbr: "tdtrip",   expands_to: "td-trip"}
+  - {abbr: "xtreeops", expands_to: "x-tree-ops"}
+  - {abbr: "move",     expands_to: "move-miru"}
+  - {abbr: "rpeqpt",   expands_to: "equipment-repair"}
+  - {abbr: "mpdcmt",   expands_to: "mpd-cementing"}
+  # Activity-code identifiers
+  - {abbr: "trip",     expands_to: "tripping"}
+  - {abbr: "circ",     expands_to: "circulation"}
+  - {abbr: "prts",     expands_to: "pressure-test"}
+  - {abbr: "rurd",     expands_to: "running"}
+  - {abbr: "ctop",     expands_to: "close-terminate-ops"}
+  - {abbr: "owff",     expands_to: "open-well-flow"}
+  - {abbr: "bhah",     expands_to: "bha-handling"}
+  - {abbr: "thgr",     expands_to: "through-bore"}
+  - {abbr: "dheq",     expands_to: "downhole-equipment"}
+  - {abbr: "rncs",     expands_to: "running-casing"}
+  - {abbr: "ddrl",     expands_to: "directional-drilling"}
+  - {abbr: "puld",     expands_to: "pull-down"}
+  - {abbr: "wprt",     expands_to: "wireline-pump"}
+  - {abbr: "rgrp",     expands_to: "rig-group"}
+  - {abbr: "wait",     expands_to: "waiting"}
+  - {abbr: "drlg",     expands_to: "drilling"}
+  - {abbr: "opnw",     expands_to: "open-well"}
+  - {abbr: "cmnt",     expands_to: "cement"}
+  - {abbr: "cpbo",     expands_to: "cap-bop"}
+  - {abbr: "bope",     expands_to: "bop-equipment"}
+  - {abbr: "slkl",     expands_to: "slack-kill"}
+  - {abbr: "wash",     expands_to: "washout"}
+  - {abbr: "ruce",     expands_to: "run-completion-equipment"}
+  - {abbr: "smpd",     expands_to: "surface-mpd"}
+  - {abbr: "rntb",     expands_to: "running-tubulars"}
+  - {abbr: "wwsp",     expands_to: "wellbore-work"}
+  - {abbr: "nund",     expands_to: "nipple-up-down"}
+  - {abbr: "mpda",     expands_to: "mpd-operations"}
+  - {abbr: "strp",     expands_to: "stripping"}
+  - {abbr: "svrg",     expands_to: "servicing-rig"}
+  - {abbr: "clen",     expands_to: "cleaning"}
+  - {abbr: "wbpl",     expands_to: "wellbore-plug"}
+  - {abbr: "slpc",     expands_to: "slickline-coil"}
+  - {abbr: "pmpo",     expands_to: "pump-out"}
+  - {abbr: "pack",     expands_to: "pack-off"}
+  - {abbr: "rdce",     expands_to: "reduce"}
+  - {abbr: "fish",     expands_to: "fishing"}
+  - {abbr: "bkrm",     expands_to: "back-ream"}
+  - {abbr: "cocf",     expands_to: "coil-ct-ops"}
+  - {abbr: "elog",     expands_to: "electric-log"}
+  - {abbr: "cond",     expands_to: "conditioning"}
+  - {abbr: "plug",     expands_to: "plug"}
+  - {abbr: "disp",     expands_to: "displace"}
+  - {abbr: "ream",     expands_to: "ream"}
+  - {abbr: "fit",      expands_to: "formation-integrity-test"}
+  - {abbr: "pull",     expands_to: "pull"}
+  - {abbr: "srvy",     expands_to: "survey"}
+  - {abbr: "shpt",     expands_to: "shoe-track"}
+  - {abbr: "othr",     expands_to: null}
+  # Downhole components
+  - {abbr: "xo",      expands_to: "crossover-sub"}
+  # Standards / manufacturers
+  - {abbr: "api",     expands_to: "api"}
+  - {abbr: "nov",     expands_to: "national-oilwell-varco"}
+  # HSE procedures
+  - {abbr: "tofs",    expands_to: "time-out-for-safety"}
+  # Downhole safety / well control
+  - {abbr: "fosv",    expands_to: "full-opening-safety-valve"}
+  - {abbr: "pce",     expands_to: "pressure-control-equipment"}
+  # Wellbore operations
+  - {abbr: "wbcu",    expands_to: "wellbore-cleanup"}
+  - {abbr: "mut",     expands_to: "make-up-torque"}
+  - {abbr: "frw",     expands_to: "free-rotating-weight"}
+  # Drilling technology / modelling
+  - {abbr: "adt",     expands_to: "advanced-drilling-technology"}
+  # BHA component descriptors
+  - {abbr: "nm",      expands_to: "nonmagnetic"}
+  # Rig / wellbore geometry
+  - {abbr: "kb",      expands_to: "kelly-bushing"}
+  - {abbr: "ooh",     expands_to: "out-of-hole"}
+  - {abbr: "aot",     expands_to: "above-total-depth"}
+  - {abbr: "vdl",     expands_to: "variable-deck-load"}
+  - {abbr: "tos",     expands_to: "top-of-section"}
+  - {abbr: "rt",      expands_to: "rotary-table"}
+  # BOP equipment
+  - {abbr: "vbr",     expands_to: "variable-bore-ram"}
+  # MPD / pressure
+  - {abbr: "esd",     expands_to: "equivalent-static-density"}
+  # Drill bit
+  - {abbr: "tfa",     expands_to: "total-flow-area"}
+  # Coiled tubing
+  - {abbr: "ct",      expands_to: "coiled-tubing"}
+  # Supervisor roles
+  - {abbr: "csv",     expands_to: "completion-supervisor"}
+  # Service companies
+  - {abbr: "mi",      expands_to: "mi-swaco"}
+  # BS alone is always part of BS&W — handled by compound term; drop standalone
+  - {abbr: "bs",      expands_to: null}
+  # Drill bit types
+  - {abbr: "pdc",     expands_to: "pdc-bit"}
+  # Company / service names — drop (not operationally distinctive graph nodes)
+  - {abbr: "rmec",    expands_to: null}
+  - {abbr: "jtl",     expands_to: null}
+  - {abbr: "ensco",   expands_to: null}
+  - {abbr: "vms",     expands_to: null}
+  - {abbr: "trs",     expands_to: "tubular-running-services"}
+  - {abbr: "oes",     expands_to: null}
+  - {abbr: "opecs",   expands_to: "operational-performance-evaluation-control-system"}
+  # Proper nouns — drop (well/field names, platform structure IDs)
+  - {abbr: "judy",    expands_to: null}
+  - {abbr: "jrp",     expands_to: null}
+  # OCR split artefacts — drop (fragments of OPERATIONSUMMARY, DRILLING ORIGINAL, MUD DATA)
+  - {abbr: "opera",   expands_to: null}
+  - {abbr: "mary",    expands_to: null}
+  - {abbr: "inal",    expands_to: null}
+  - {abbr: "mudda",   expands_to: null}
+  - {abbr: "mudd",    expands_to: null}
+  - {abbr: "illin",   expands_to: null}
+  - {abbr: "pp",      expands_to: null}
+  # Material qualifier — drop (Ultra Fine Grade Barite product descriptor)
+  - {abbr: "ufg",     expands_to: null}
+  # Safety boilerplate — drop (covered by job-safety-analysis stop word)
+  - {abbr: "sfty",    expands_to: null}
+
+# ---------------------------------------------------------------------------
+# Op-code labels  (used by label_op_code())
+# ---------------------------------------------------------------------------
+op_code_labels:
+  MPDCSG:       "MPD Casing"
+  STIM:         "Stimulation"
+  CEMENT:       "Cementing"
+  WHDBOP:       "Wellhead / BOP"
+  MPDDRLG:      "MPD Drilling"
+  "RPCOMPU PP": "Completion"
+  DRILLOUT:     "Drillout"
+  DRILL:        "Drilling"
+  CASING:       "Casing"
+  TDTRIP:       "TD Trip"
+  XTREEOPS:     "X-Tree Ops"
+  MOVE:         "Move / MIRU"
+  RPEQPT:       "Equipment Repair"
+  MPDCMT:       "MPD Cementing"
+
+# ---------------------------------------------------------------------------
+# Activity-code labels  (used by label_activity_code())
+# ---------------------------------------------------------------------------
+activity_code_labels:
+  TRIP:     "Tripping"
+  SFTY:     "Safety / JSA"
+  CIRC:     "Circulation"
+  PRTS:     "Pressure Test"
+  RURD:     "Running"
+  CTOP:     "Close / Terminate Ops"
+  OWFF:     "Open Well / Flow"
+  BHAH:     "BHA Handling"
+  THGR:     "Through-Bore"
+  DHEQ:     "Downhole Equipment"
+  RNCS:     "Running Casing"
+  DDRL:     "Directional Drilling"
+  PULD:     "Pull Down"
+  "WHBO P": "Wellhead BOP"
+  OTHR:     "Other"
+  WPRT:     "Wireline / Pump"
+  RGRP:     "Rig Group"
+  WAIT:     "Waiting"
+  DRLG:     "Drilling"
+  OPNW:     "Open Well"
+  CMNT:     "Cement"
+  CPBO:     "Cap BOP"
+  BOPE:     "BOP Equipment"
+  SLKL:     "Slack Kill"
+  WASH:     "Washout"
+  RUCE:     "Run Completion Equipment"
+  SMPD:     "Surface MPD"
+  RNTB:     "Running Tubulars"
+  WWSP:     "Wellbore Work"
+  NUND:     "Nipple Up/Down"
+  MPDA:     "MPD Operations"
+  STRP:     "Stripping"
+  SVRG:     "Servicing Rig"
+  CLEN:     "Cleaning"
+  WBPL:     "Wellbore Plug"
+  SLPC:     "Slickline / Coil"
+  PMPO:     "Pump Out"
+  PACK:     "Pack Off"
+  RDCE:     "Reduce"
+  FISH:     "Fishing"
+  BKRM:     "Back Ream"
+  COCF:     "Coil / CT Ops"
+  ELOG:     "Electric Log"
+  COND:     "Conditioning"
+  PLUG:     "Plug"
+  DISP:     "Displace"
+  REAM:     "Ream"
+  FIT:      "Formation Integrity Test"
+  PULL:     "Pull"
+  SRVY:     "Survey"
+  SHPT:     "Shoe Track"

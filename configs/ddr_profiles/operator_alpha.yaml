@@ -1,0 +1,128 @@
+# DDR Profile — Operator Alpha
+# North Sea operator using MaxWell Drilling DDR software.
+# Calibrated to the standard MaxWell A4 portrait layout.
+
+profile:
+  name: "Operator Alpha"
+  description: "North Sea operator, MaxWell DDR format, 4-7 pages per report"
+  version: "1.0"
+  ddr_software: "MaxWell Drilling"
+
+# ── Filename ──────────────────────────────────────────────────────────────────
+filename:
+  # Named groups: rig, ddr_number, asset_or_project, wellbore_suffix, report_date
+  pattern: >-
+    ^(?P<rig>[A-Za-z0-9_-]+)\s+
+    (?P<report_type>DDR)\s+
+    (?P<ddr_number>\d+)\s*
+    (?P<asset_or_project>[A-Za-z][A-Za-z0-9_-]*)\s+
+    (?P<wellbore_suffix>RB|R\d+)\s+
+    (?P<report_date>\d{2}\.\d{2}\.\d{4})
+    (?P<trailing_dots>\.*)\.pdf$
+  flags: IGNORECASE
+  date_format: "%d.%m.%Y"         # strptime format for the report_date group
+  doc_id_template: "{rig}-DDR-{ddr_number:03d}-{asset_or_project}-{wellbore_suffix}-{date_iso}"
+
+# ── Wellbore naming ───────────────────────────────────────────────────────────
+wellbore:
+  block_field: "asset_or_project"   # which filename group carries the field/block
+  suffix_labels:
+    RB:  "Parent wellbore (re-spud)"
+    R1:  "First sidetrack"
+    R2:  "Second sidetrack"
+    R3:  "Third sidetrack"
+    R4:  "Fourth sidetrack"
+
+# ── Header extraction (PyMuPDF y-coordinate bands) ───────────────────────────
+header:
+  # Page 1 of the DDR; all coordinates in PDF points from top-left
+  top_band_max_y: 80            # date, report no, wellbore, job start, spud
+  grid_band:  [75, 200]         # property grid (depths, costs, rig, field)
+  narrative_band: [180, 360]    # morning ops, 24h forecast, last 24h summary
+
+  # Label keywords used to identify each field from "Label\nValue" block cells.
+  # First match wins. Case-insensitive substring match.
+  field_labels:
+    job_number:         ["maxwell job", "job number"]
+    api_uwi:            ["api / uwi"]
+    wellbore_api:       ["wellbore api"]
+    depth_progress_ft:  ["depth progress"]
+    end_depth_md_ft:    ["end depth (ftoth)"]   # must not contain "tvd"
+    end_depth_tvd_ft:   ["end depth (tvd)"]
+    afe_no:             ["afe / rfe", "afe/rfe"]
+    afe_amt:            ["afe+supp amt", "afe+supp"]
+    daily_cost:         ["daily cost total"]
+    cumulative_cost:    ["cumulative cost"]
+    rig_name:           ["rig name"]
+    field_name:         ["field name"]
+    kb_elevation_ft:    ["kb/rt elevation", "original kb"]
+    water_depth_ft:     ["water depth"]
+    avg_rop:            ["avg rop"]
+    last_casing_string: ["last casing string"]
+    head_count:         ["head count"]
+    cum_personnel_hours: ["cum personnel total"]
+    morning_report_ops: ["ops and depth @ morning", "ops and depth"]
+    forecast_24hr:      ["24hr forecast", "24 hr forecast"]
+    last_24hr_summary:  ["last 24hr summary", "last 24 hr"]
+
+# ── Operation Summary extraction ─────────────────────────────────────────────
+op_summary:
+  # Text that marks the start of an Op Summary section in a pdfplumber table
+  section_headers: ["OPERATION SUMMARY"]
+
+  # Column header keywords — any one match identifies the column.
+  # Multiple variants handle layout differences (compact 8-col vs sparse 25-col).
+  columns:
+    start_time:    ["start time", "start\ntime"]
+    end_time:      ["end time", "end\ntime"]
+    duration_hr:   ["dur (hr)", "dur(hr)"]
+    phase:         ["phase"]
+    op_code:       ["op code", "op_code"]
+    activity_code: ["activity code", "activity\ncode"]
+    pt_x:          ["time p-t-x", "p-t-x", "ptx"]
+    operation:     ["operation"]
+
+  # Minimum required columns to consider a header row valid
+  required_columns: ["start_time", "dur_hr", "operation"]
+
+  # Pattern that identifies a shift-block separator row (e.g. "00:00-06:00")
+  shift_separator_pattern: "\\d{2}:\\d{2}-\\d{2}:\\d{2}"
+
+  # Initial shift block label applied before any separator is encountered
+  default_shift_label: "00:00-12:00"
+
+# ── Phase codes and display order ─────────────────────────────────────────────
+phases:
+  # Controls sort order in charts and analysis. Unknown codes are appended.
+  order: [MIRU, COND1, INTRM1, INTRM2, PROD1, COMPZN]
+
+  labels:
+    MIRU:   "Move In / Rig Up"
+    COND1:  "Conductor Section"
+    INTRM1: "Intermediate Section 1"
+    INTRM2: "Intermediate Section 2"
+    PROD1:  "Production / Reservoir Section"
+    COMPZN: "Completion / Zonal"
+
+  # Phases where NPT is expected to be high (used in causality narratives)
+  typically_high_npt: [MIRU, COND1]
+  # Phases that represent the operational benchmark (typically low NPT)
+  benchmark_phases:   [INTRM1, INTRM2]
+
+# ── General Notes fields ──────────────────────────────────────────────────────
+general_notes:
+  ditch_magnet:
+    enabled: true
+    section_header: "Ditch Magnet"
+    daily_pattern:  "Previous\\s+(\\d+)\\s+hours?\\s*[:\\-]?\\s*([\\d,]+(?:\\.\\d+)?)\\s*g"
+    section_pattern: "([\\d\\-/]+\"(?:\\s*x\\s*[\\d\\-/]+\")?\\s*Section\\s*Total)\\s*[:\\-]?\\s*([\\d,]+(?:\\.\\d+)?)\\s*g"
+    assembly_pattern: "Assembly\\s*#(\\d+)\\s*=\\s*([\\d,]+(?:\\.\\d+)?)\\s*g"
+
+  annulus_pressures:
+    enabled: true
+    section_header: "Annulus Pressure"
+
+  ctu_tension:
+    enabled: true
+    section_header: "CTU"
+    pattern: "CTU\\s+Tension\\s*[:\\-]?\\s*([\\d,]+(?:\\.\\d+)?)\\s*(?:k?lbs|kips)"

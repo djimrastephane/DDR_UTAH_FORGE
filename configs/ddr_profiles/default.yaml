@@ -1,0 +1,72 @@
+# DDR Profile — Default / Fallback
+# Used when no operator-specific profile matches the filename.
+# Provides sensible defaults that work for MaxWell-family DDR formats.
+# Override specific sections in an operator profile rather than editing this file.
+
+profile:
+  name: "Default"
+  description: "Generic fallback for MaxWell-family DDR formats"
+  version: "1.0"
+  ddr_software: "Unknown"
+
+filename:
+  # Liberal pattern — captures any PDF with a date in DD.MM.YYYY format
+  pattern: >-
+    ^(?P<rig>[A-Za-z0-9_\-\s]+?)\s+
+    (?P<report_type>DDR)\s+
+    (?P<ddr_number>\d+)\s*
+    (?P<asset_or_project>[A-Za-z0-9_\-]*)\s*
+    (?P<wellbore_suffix>[A-Za-z0-9]*)\s+
+    (?P<report_date>\d{2}\.\d{2}\.\d{4})
+    .*\.pdf$
+  flags: IGNORECASE
+  date_format: "%d.%m.%Y"
+  doc_id_template: "{rig}-DDR-{ddr_number:03d}-{date_iso}"
+
+wellbore:
+  block_field: "asset_or_project"
+  suffix_labels: {}   # populated by operator profile
+
+header:
+  top_band_max_y: 80
+  grid_band:  [75, 200]
+  narrative_band: [180, 360]
+  field_labels:
+    rig_name:           ["rig name", "rig"]
+    field_name:         ["field name", "field"]
+    water_depth_ft:     ["water depth"]
+    end_depth_md_ft:    ["end depth (ftoth)"]
+    end_depth_tvd_ft:   ["end depth (tvd)"]
+    daily_cost:         ["daily cost total", "daily cost"]
+    cumulative_cost:    ["cumulative cost"]
+    last_casing_string: ["last casing string"]
+    morning_report_ops: ["ops and depth @ morning", "ops and depth"]
+    forecast_24hr:      ["24hr forecast", "24 hr forecast"]
+    last_24hr_summary:  ["last 24hr summary", "last 24 hr"]
+
+op_summary:
+  section_headers: ["OPERATION SUMMARY", "DAILY OPERATIONS"]
+  columns:
+    start_time:    ["start time", "start\ntime"]
+    end_time:      ["end time", "end\ntime"]
+    duration_hr:   ["dur (hr)", "dur(hr)", "duration"]
+    phase:         ["phase", "section"]
+    op_code:       ["op code", "operation code"]
+    activity_code: ["activity code", "activity"]
+    pt_x:          ["time p-t-x", "p-t-x", "ptx", "code"]
+    operation:     ["operation", "description"]
+  required_columns: ["start_time", "dur_hr", "operation"]
+  shift_separator_pattern: "\\d{2}:\\d{2}-\\d{2}:\\d{2}"
+  default_shift_label: "00:00-12:00"
+
+phases:
+  order: []     # empty = sort alphabetically / as encountered
+  labels: {}    # empty = display codes as-is
+
+general_notes:
+  ditch_magnet:
+    enabled: false
+  annulus_pressures:
+    enabled: false
+  ctu_tension:
+    enabled: false
