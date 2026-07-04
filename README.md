@@ -69,6 +69,15 @@ bash scripts/run_ddr_intelligence.sh
 
 The Streamlit app runs on `http://localhost:8502` by default.
 
+## `src/rag_pdf/` vs `src/ddr_rag/`
+
+Two layers, kept separate on purpose:
+
+- `src/rag_pdf/` is the generic, report-agnostic PDF pipeline: page extraction, OCR fallback, region/table detection, boilerplate stripping, chunking, and the hybrid BM25 + dense search service. It has no notion of "DDR" and would work on any PDF corpus. `scripts/preprocess_hybrid.py` and `scripts/ask_query.py` / `scripts/run_eval.py` drive it directly.
+- `src/ddr_rag/` is the Utah FORGE / DDR-specific domain layer built on top of that output: filename QC, DDR header/section parsing, extractor registry, NPT classification, causality analysis, and graph building. `scripts/batch_preprocess_raw_ddrs.py`, `scripts/extract_*.py`, `scripts/build_graphs.py`, and `scripts/build_causality.py` drive it.
+
+They are not merged because `rag_pdf` is meant to stay reusable for a future non-Utah-FORGE corpus; `ddr_rag` is where anything specific to this well's report format belongs.
+
 ## Notes
 
 Some reference/demo scripts and docs from `DDR_RAG_Pipeline` are retained because they are useful architecture examples. Treat anything mentioning the original North Sea corpus, `Ensco120`, `JRP`, `ThetisField`, or `Block-A` as reference material unless it has been explicitly adapted for Utah FORGE.
