@@ -384,7 +384,10 @@ def main() -> None:
     print(f"Saved {len(df)} components → {parquet_path}")
 
     print("\nCompletion string summary:")
-    print(f"{'#':<3} {'Component':<45} {'Depth (ft MD)':>14} {'OD\"':>6} {'ID\"':>6} {'Drift\"':>7} {'Restrict?':>10} {'Source':<12}")
+    od_label = 'OD"'
+    id_label = 'ID"'
+    drift_label = 'Drift"'
+    print(f"{'#':<3} {'Component':<45} {'Depth (ft MD)':>14} {od_label:>6} {id_label:>6} {drift_label:>7} {'Restrict?':>10} {'Source':<12}")
     print("-" * 110)
     for _, r in df.iterrows():
         flag = " ◄ ID restriction" if r["is_id_restriction"] else ""
