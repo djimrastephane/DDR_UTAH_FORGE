@@ -7,14 +7,15 @@ import streamlit as st
 
 _repo_root = Path(__file__).resolve().parents[2]
 _ui_dir    = Path(__file__).resolve().parent
+_demos_dir = _repo_root / "demos"
 
-for _p in (str(_repo_root / "src"), str(_ui_dir)):
+for _p in (str(_repo_root / "src"), str(_ui_dir), str(_demos_dir)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
 try:
     from linkedin_demo import page_linkedin_demo as _page_linkedin_demo
-    from components.demo_helpers import inject_demo_css as _inject_demo_css
+    from demo_helpers import inject_demo_css as _inject_demo_css
     _DEMO_AVAILABLE = True
 except ImportError:
     _DEMO_AVAILABLE     = False

@@ -12,6 +12,7 @@ data/processed/
               generated extraction outputs
 data/fields/  field/well manifests and combined analysis artefacts
 data/graphs/  operational graph and causality outputs (scripts/build_graphs.py, scripts/build_causality.py)
+demos/        LinkedIn/marketing demo assets, not part of the production dashboard
 docs/         implementation notes
 scripts/      command-line pipeline entry points
 src/          reusable extraction, retrieval, and analytics code
