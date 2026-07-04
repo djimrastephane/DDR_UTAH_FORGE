@@ -17,7 +17,6 @@ data/raw/*
 data/processed/*
 data/global_index/*
 data/graphs/*
-data/graphs_w2/*
 data/fields/*
 models/*
 results/*
@@ -27,7 +26,6 @@ runs/*
 !data/processed/.gitkeep
 !data/global_index/.gitkeep
 !data/graphs/.gitkeep
-!data/graphs_w2/.gitkeep
 !data/fields/.gitkeep
 !data/fields/UtahForge/
 !data/fields/UtahForge/wells/
