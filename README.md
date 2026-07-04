@@ -70,3 +70,7 @@ The Streamlit app runs on `http://localhost:8502` by default.
 ## Notes
 
 Some reference/demo scripts and docs from `DDR_RAG_Pipeline` are retained because they are useful architecture examples. Treat anything mentioning the original North Sea corpus, `Ensco120`, `JRP`, `ThetisField`, or `Block-A` as reference material unless it has been explicitly adapted for Utah FORGE.
+
+## License
+
+[MIT](LICENSE).
