@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Optional
 
 import pandas as pd
@@ -7,6 +8,11 @@ import pandas as pd
 from rag_pdf.config import DEFAULT_CONFIG
 
 TABLE_EXTRACT_CFG = DEFAULT_CONFIG.TABLE_EXTRACT
+
+TRAILING_ROW_PATTERNS = (
+    re.compile(r"total\s+ho?u?rs?", re.IGNORECASE),
+    re.compile(r"wellez\.com", re.IGNORECASE),
+)
 
 
 def find_anchor_top(page, anchor_text: str, line_tolerance_pt: float = 2.0) -> Optional[float]:
@@ -63,3 +69,15 @@ def extract_table_pdfplumber_region(
         return pd.DataFrame(candidates[0][1])
     except Exception:
         return None
+
+
+def drop_trailing_summary_rows(df: Optional[pd.DataFrame]) -> Optional[pd.DataFrame]:
+    if df is None or len(df) == 0:
+        return df
+
+    def _is_trailing(row: pd.Series) -> bool:
+        text = " ".join(str(v) for v in row if str(v).strip())
+        return any(p.search(text) for p in TRAILING_ROW_PATTERNS)
+
+    mask = df.apply(_is_trailing, axis=1)
+    return df.loc[~mask].reset_index(drop=True)

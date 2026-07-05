@@ -5,7 +5,14 @@ from pathlib import Path
 import pdfplumber
 import pytest
 
-from rag_pdf.table_pdfplumber_region import extract_table_pdfplumber_region, find_anchor_top
+import pandas as pd
+
+from rag_pdf.table_extract import clean_table_dataframe
+from rag_pdf.table_pdfplumber_region import (
+    drop_trailing_summary_rows,
+    extract_table_pdfplumber_region,
+    find_anchor_top,
+)
 
 
 RAW_DIR = Path(__file__).resolve().parents[1] / "data" / "raw"
@@ -92,3 +99,37 @@ def test_extract_table_pdfplumber_region_returns_none_when_end_anchor_missing() 
         )
 
     assert df is None
+
+
+def test_drop_trailing_summary_rows_removes_total_hrs_and_footer() -> None:
+    with pdfplumber.open(DRILLING_SAMPLE) as pdf:
+        df = extract_table_pdfplumber_region(pdf.pages[0])
+    cleaned = clean_table_dataframe(df, None)
+
+    filtered = drop_trailing_summary_rows(cleaned)
+
+    assert len(filtered) == len(cleaned) - 2
+    text = filtered.astype(str).apply(lambda col: col.str.cat(sep=" "), axis=0).str.cat(sep=" ")
+    assert "total hrs" not in text.lower()
+    assert "wellez.com" not in text.lower()
+    assert "Production Drilling" in text
+
+
+@pytest.mark.skipif(not COMPLETION_SAMPLE.exists(), reason="Completion sample PDF is not present.")
+def test_drop_trailing_summary_rows_removes_total_hours_wording_variant() -> None:
+    with pdfplumber.open(COMPLETION_SAMPLE) as pdf:
+        df = extract_table_pdfplumber_region(
+            pdf.pages[0], anchor_text="TIME LOG", end_anchor_text="FLUID DATA"
+        )
+    cleaned = clean_table_dataframe(df, None)
+
+    filtered = drop_trailing_summary_rows(cleaned)
+
+    assert len(filtered) == len(cleaned) - 1
+    text = filtered.astype(str).apply(lambda col: col.str.cat(sep=" "), axis=0).str.cat(sep=" ")
+    assert "total hours" not in text.lower()
+
+
+def test_drop_trailing_summary_rows_handles_none_and_empty() -> None:
+    assert drop_trailing_summary_rows(None) is None
+    assert len(drop_trailing_summary_rows(pd.DataFrame())) == 0
