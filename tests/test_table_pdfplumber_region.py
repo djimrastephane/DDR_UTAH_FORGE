@@ -11,8 +11,13 @@ from rag_pdf.table_extract import clean_table_dataframe
 from rag_pdf.table_pdfplumber_region import (
     drop_trailing_summary_rows,
     extract_table_pdfplumber_region,
+    extract_tables_for_page_region,
     find_anchor_top,
 )
+
+
+def _cleaner(df: pd.DataFrame) -> pd.DataFrame:
+    return clean_table_dataframe(df, None)
 
 
 RAW_DIR = Path(__file__).resolve().parents[1] / "data" / "raw"
@@ -133,3 +138,33 @@ def test_drop_trailing_summary_rows_removes_total_hours_wording_variant() -> Non
 def test_drop_trailing_summary_rows_handles_none_and_empty() -> None:
     assert drop_trailing_summary_rows(None) is None
     assert len(drop_trailing_summary_rows(pd.DataFrame())) == 0
+
+
+def test_extract_tables_for_page_region_picks_consumables_for_drilling_template() -> None:
+    with pdfplumber.open(DRILLING_SAMPLE) as pdf:
+        results = extract_tables_for_page_region(pdf, 1, cleaner=_cleaner)
+
+    assert len(results) == 1
+    assert results[0].flavor == "pdfplumber_region[CONSUMABLES]"
+    assert "Production Drilling" in results[0].dataframe.astype(str).to_string()
+
+
+@pytest.mark.skipif(not COMPLETION_SAMPLE.exists(), reason="Completion sample PDF is not present.")
+def test_extract_tables_for_page_region_picks_time_log_for_completion_template() -> None:
+    # Regression test: "CONSUMABLES" also exists on the Completion-C page (it
+    # just bounds a small unrelated table there), so a naive "first anchor
+    # that finds anything" strategy would wrongly pick it over the real
+    # "TIME LOG" table. The selection must compare cleaned table sizes.
+    with pdfplumber.open(COMPLETION_SAMPLE) as pdf:
+        results = extract_tables_for_page_region(pdf, 1, cleaner=_cleaner)
+
+    assert len(results) == 1
+    assert results[0].flavor == "pdfplumber_region[TIME LOG]"
+    assert "Clean Out Hole" in results[0].dataframe.astype(str).to_string()
+
+
+def test_extract_tables_for_page_region_returns_empty_list_for_invalid_page() -> None:
+    with pdfplumber.open(DRILLING_SAMPLE) as pdf:
+        results = extract_tables_for_page_region(pdf, 999, cleaner=_cleaner)
+
+    assert results == []
