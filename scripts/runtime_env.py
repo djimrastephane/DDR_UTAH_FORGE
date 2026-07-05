@@ -11,9 +11,7 @@ from typing import Any
 
 
 DEFAULT_PACKAGES = [
-    "camelot",
     "faiss",
-    "ghostscript",
     "numpy",
     "pandas",
     "pdfplumber",
@@ -25,10 +23,9 @@ DEFAULT_PACKAGES = [
     "transformers",
 ]
 
-DEFAULT_COMMANDS = ["gs", "pdftoppm", "tesseract"]
+DEFAULT_COMMANDS = ["pdftoppm", "tesseract"]
 
 DIST_NAME_OVERRIDES = {
-    "camelot": "camelot-py",
     "faiss": "faiss-cpu",
     "pymupdf": "PyMuPDF",
     "sentence_transformers": "sentence-transformers",
@@ -115,7 +112,6 @@ def _tiktoken_cl100k_base_available() -> tuple[bool, str]:
 def critical_environment_checks() -> list[dict[str, Any]]:
     report = dependency_report()
     modules = report["modules"]
-    commands = report["commands"]
     tiktoken_encoding_ok, tiktoken_encoding_detail = _tiktoken_cl100k_base_available()
     checks = [
         {
@@ -127,21 +123,6 @@ def critical_environment_checks() -> list[dict[str, Any]]:
             "name": "tiktoken_cl100k_base_available",
             "ok": bool(tiktoken_encoding_ok),
             "detail": tiktoken_encoding_detail,
-        },
-        {
-            "name": "camelot_available",
-            "ok": bool(modules["camelot"]["installed"]),
-            "detail": "Required for the structured table extraction branch.",
-        },
-        {
-            "name": "ghostscript_python_wrapper_available",
-            "ok": bool(modules["ghostscript"]["installed"]),
-            "detail": "Needed by Camelot on many environments.",
-        },
-        {
-            "name": "ghostscript_binary_available",
-            "ok": bool(commands["gs"]["available"]),
-            "detail": "Ghostscript binary used by Camelot.",
         },
         {
             "name": "faiss_available",

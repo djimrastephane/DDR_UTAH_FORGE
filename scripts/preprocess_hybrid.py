@@ -345,11 +345,11 @@ def _apply_config_overrides(cfg: PreprocessConfig) -> None:
     import rag_pdf.extract_page as extract_page_mod
     import rag_pdf.headings as headings_mod
     import rag_pdf.region_segment as region_segment_mod
-    import rag_pdf.table_camelot as table_camelot_mod
     import rag_pdf.table_chunking as table_chunking_mod
     import rag_pdf.table_detect as table_detect_mod
     import rag_pdf.table_extract as table_extract_mod
     import rag_pdf.table_markdown as table_markdown_mod
+    import rag_pdf.table_pdfplumber_region as table_pdfplumber_region_mod
 
     _set_module_cfg_attrs(
         boilerplate_mod,
@@ -398,7 +398,7 @@ def _apply_config_overrides(cfg: PreprocessConfig) -> None:
         cfg,
         (),
     )
-    setattr(table_camelot_mod, "TABLE_EXTRACT_CFG", cfg.TABLE_EXTRACT)
+    setattr(table_pdfplumber_region_mod, "TABLE_EXTRACT_CFG", cfg.TABLE_EXTRACT)
     setattr(table_chunking_mod, "TABLE_EXTRACT_CFG", cfg.TABLE_EXTRACT)
     setattr(table_extract_mod, "TABLE_EXTRACT_CFG", cfg.TABLE_EXTRACT)
     setattr(table_markdown_mod, "TABLE_EXTRACT_CFG", cfg.TABLE_EXTRACT)
@@ -1124,7 +1124,6 @@ def main() -> None:
             print("\nExtracting tables (early, for markdown injection)...")
             table_chunks_df, structured_tables_df, table_facts_df, _rejected_ocr_table_pages = process_table_pages(
                 table_pages,
-                cfg.PDF_PATH,
                 pdf_plumber,
                 doc_id,
                 corpus_id,
@@ -1245,7 +1244,6 @@ def main() -> None:
             print("\nExtracting tables...")
             table_chunks_df, structured_tables_df, table_facts_df, rejected_ocr_table_pages = process_table_pages(
                 table_pages,
-                cfg.PDF_PATH,
                 pdf_plumber,
                 doc_id,
                 corpus_id,

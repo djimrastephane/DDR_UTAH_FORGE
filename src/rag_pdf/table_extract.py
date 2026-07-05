@@ -9,11 +9,10 @@ import pandas as pd
 from rag_pdf.chunking import count_tokens
 from rag_pdf.ocr_table_fallback import accept_and_classify_ocr_table
 from rag_pdf.schemas import build_page_list_struct, make_chunk_id_global
-from rag_pdf.table_camelot import (
+from rag_pdf.table_pdfplumber_region import (
     TableResult,
     TABLE_EXTRACT_CFG,
-    extract_table_camelot,
-    extract_tables_for_page,
+    extract_tables_for_page_region,
 )
 from rag_pdf.table_canonicalize import extract_table_facts_from_dataframe
 from rag_pdf.table_chunking import build_table_chunk_payloads
@@ -209,40 +208,6 @@ def extract_table_pdfplumber(pdf_plumber, page_no: int) -> Optional[pd.DataFrame
     return None
 
 
-def extract_table_cells(
-    pdf_path: Path,
-    pdf_plumber,
-    page_no: int,
-    table_type: Optional[str],
-) -> Optional[pd.DataFrame]:
-    # Try configured Camelot 3-pass extraction.
-    table_results = extract_tables_for_page(
-        pdf_path=pdf_path,
-        page_no=page_no,
-        config={
-            "lattice_accuracy_threshold": TABLE_EXTRACT_CFG.CAMELOT_LATTICE_ACCURACY_THRESHOLD,
-            "lattice_whitespace_max": TABLE_EXTRACT_CFG.CAMELOT_LATTICE_WHITESPACE_MAX,
-            "hybrid_accuracy_threshold": TABLE_EXTRACT_CFG.CAMELOT_HYBRID_ACCURACY_THRESHOLD,
-            "hybrid_whitespace_max": TABLE_EXTRACT_CFG.CAMELOT_HYBRID_WHITESPACE_MAX,
-            "line_scale": TABLE_EXTRACT_CFG.CAMELOT_LINE_SCALE,
-            "resolution": TABLE_EXTRACT_CFG.CAMELOT_RESOLUTION,
-            "row_tol": TABLE_EXTRACT_CFG.CAMELOT_STREAM_ROW_TOL,
-            "edge_tol": TABLE_EXTRACT_CFG.CAMELOT_STREAM_EDGE_TOL,
-        },
-        cleaner=lambda df: clean_table_dataframe(df, table_type=None),
-    )
-    if table_results:
-        df = table_results[0].dataframe
-        if df is not None and len(df) > 0:
-            return clean_table_dataframe(df, table_type)
-
-    df = extract_table_pdfplumber(pdf_plumber, page_no)
-    if df is not None and len(df) > 0:
-        return clean_table_dataframe(df, table_type)
-
-    return None
-
-
 def generate_table_summary(
     df: pd.DataFrame,
     table_type: Optional[str],
@@ -326,7 +291,7 @@ def _materialize_table_result(
         "table_type": table_type or "unknown",
         "rows": len(raw_table),
         "cols": len(raw_table.columns),
-        "extraction_method": "camelot" if tresult.flavor in {"lattice", "hybrid", "stream", "stream_bottom"} else "pdfplumber",
+        "extraction_method": "pdfplumber",
         "flavor": tresult.flavor,
         "parsing_report_accuracy": float(parsing_report.get("accuracy", 0.0)),
         "parsing_report_whitespace": float(parsing_report.get("whitespace", 0.0)),
@@ -424,7 +389,6 @@ def _self_test_staff_costs() -> None:
 
 def process_table_pages(
     table_pages: list[dict],
-    pdf_path: Path,
     pdf_plumber,
     doc_id: str,
     corpus_id: str,
@@ -448,37 +412,25 @@ def process_table_pages(
         table_type = tpage["table_type"]
         page_text = str(tpage.get("text", "") or "")
         page_raw_text = str(tpage.get("raw_text", "") or "")
-        split_candidate = _split_table_candidate(table_type, page_text or page_raw_text)
 
-        table_results = extract_tables_for_page(
-            pdf_path=pdf_path,
+        # return_all_tables / enable_secondary_bottom_pass supported the old
+        # camelot multi-table splitting path (only ever exercised by
+        # reference-pipeline "staff_costs"-style tables, never Utah FORGE
+        # DDR data); the pdfplumber-region path below returns a single best
+        # table per page and does not consume them.
+        table_results = extract_tables_for_page_region(
+            pdf_plumber=pdf_plumber,
             page_no=page_no,
-            config={
-                "lattice_accuracy_threshold": TABLE_EXTRACT_CFG.CAMELOT_LATTICE_ACCURACY_THRESHOLD,
-                "lattice_whitespace_max": TABLE_EXTRACT_CFG.CAMELOT_LATTICE_WHITESPACE_MAX,
-                "hybrid_accuracy_threshold": TABLE_EXTRACT_CFG.CAMELOT_HYBRID_ACCURACY_THRESHOLD,
-                "hybrid_whitespace_max": TABLE_EXTRACT_CFG.CAMELOT_HYBRID_WHITESPACE_MAX,
-                "line_scale": TABLE_EXTRACT_CFG.CAMELOT_LINE_SCALE,
-                "resolution": TABLE_EXTRACT_CFG.CAMELOT_RESOLUTION,
-                "row_tol": TABLE_EXTRACT_CFG.CAMELOT_STREAM_ROW_TOL,
-                "edge_tol": TABLE_EXTRACT_CFG.CAMELOT_STREAM_EDGE_TOL,
-                "return_all_tables": bool(return_all_tables or split_candidate),
-                "secondary_bottom_area": (
-                    f"0,0,{float(tpage.get('page_width', 0.0) or 0.0):.1f},{max(1.0, float(tpage.get('page_height', 0.0) or 0.0) * 0.45):.1f}"
-                    if (enable_secondary_bottom_pass or split_candidate) and float(tpage.get("page_width", 0.0) or 0.0) > 0.0 and float(tpage.get("page_height", 0.0) or 0.0) > 0.0
-                    else None
-                ),
-            },
             cleaner=lambda df: clean_table_dataframe(df, table_type=None),
         )
 
-        camelot_tables_found = len(table_results)
+        primary_tables_found = len(table_results)
         page_extractor = str(tpage.get("extractor", "") or "").lower()
         page_rotation = int(tpage.get("rotation", 0) or 0)
 
-        # OCR-table fallback: scanned/ocr pages where Camelot found no tables.
+        # OCR-table fallback: scanned/ocr pages where the primary pass found no tables.
         if (
-            camelot_tables_found == 0
+            primary_tables_found == 0
             and bool(tpage.get("is_table", False))
             and page_extractor == "ocr"
         ):
@@ -522,19 +474,22 @@ def process_table_pages(
             continue
 
         if not table_results:
-            # pdfplumber fallback keeps the pipeline resilient if Camelot fails entirely.
+            # Last-resort whole-page fallback for pages that don't match any
+            # known anchor (e.g. an unrecognized report template). Naive and
+            # noisier than the anchor-scoped path above, but keeps the
+            # pipeline resilient rather than dropping the page entirely.
             df_fallback = extract_table_pdfplumber(pdf_plumber, page_no)
             if df_fallback is not None and len(df_fallback) > 0:
                 table_results = [
                     TableResult(
                         page_no=page_no,
-                        flavor="pdfplumber",
+                        flavor="pdfplumber_whole_page",
                         dataframe=clean_table_dataframe(df_fallback, table_type),
                         parsing_report={"accuracy": 0.0, "whitespace": 0.0, "order": 0, "page": str(page_no)},
-                        logs=[f"page {page_no}: pdfplumber fallback succeeded"],
+                        logs=[f"page {page_no}: whole-page pdfplumber fallback succeeded"],
                     )
                 ]
-                print(f"page {page_no}: camelot all-pass failed; pdfplumber fallback used")
+                print(f"page {page_no}: anchor-scoped extraction failed; whole-page pdfplumber fallback used")
 
         table_results = merge_split_table_results(
             table_results,
