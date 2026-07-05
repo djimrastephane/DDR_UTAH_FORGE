@@ -55,11 +55,40 @@ def test_extract_table_pdfplumber_region_returns_none_for_missing_anchor() -> No
 
 
 @pytest.mark.skipif(not COMPLETION_SAMPLE.exists(), reason="Completion sample PDF is not present.")
-def test_extract_table_pdfplumber_region_on_completion_template_is_unvalidated() -> None:
+def test_find_anchor_top_matches_multi_word_heading() -> None:
     with pdfplumber.open(COMPLETION_SAMPLE) as pdf:
-        top = find_anchor_top(pdf.pages[0], "CONSUMABLES")
+        page = pdf.pages[0]
+        time_log_top = find_anchor_top(page, "TIME LOG")
+        fluid_data_top = find_anchor_top(page, "FLUID DATA")
 
-    # The Completion-C template has not been validated against this anchor;
-    # this test documents the current (unsupported) behavior rather than
-    # asserting a specific result.
-    assert top is None or isinstance(top, float)
+    assert time_log_top is not None
+    assert fluid_data_top is not None
+    assert time_log_top < fluid_data_top
+
+
+@pytest.mark.skipif(not COMPLETION_SAMPLE.exists(), reason="Completion sample PDF is not present.")
+def test_extract_table_pdfplumber_region_isolates_completion_time_log_table() -> None:
+    # Completion-C uses a different section order than Drilling-C: the real
+    # per-shift table sits under "TIME LOG", well before "CONSUMABLES", so it
+    # needs an explicit end anchor rather than the Drilling-C default of
+    # cropping to the page bottom.
+    with pdfplumber.open(COMPLETION_SAMPLE) as pdf:
+        df = extract_table_pdfplumber_region(
+            pdf.pages[0], anchor_text="TIME LOG", end_anchor_text="FLUID DATA"
+        )
+
+    assert df is not None
+    text = df.astype(str).apply(lambda col: col.str.cat(sep=" "), axis=0).str.cat(sep=" ")
+    assert "Clean Out Hole" in text
+    assert "Trip in hole picking up 3 1/2\" drill pipe" in text
+    assert all("CleanOutHole" not in str(v) for v in df.values.flatten())
+
+
+@pytest.mark.skipif(not COMPLETION_SAMPLE.exists(), reason="Completion sample PDF is not present.")
+def test_extract_table_pdfplumber_region_returns_none_when_end_anchor_missing() -> None:
+    with pdfplumber.open(COMPLETION_SAMPLE) as pdf:
+        df = extract_table_pdfplumber_region(
+            pdf.pages[0], anchor_text="TIME LOG", end_anchor_text="NOT_A_REAL_HEADING_XYZ"
+        )
+
+    assert df is None

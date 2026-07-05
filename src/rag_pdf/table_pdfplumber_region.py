@@ -9,24 +9,39 @@ from rag_pdf.config import DEFAULT_CONFIG
 TABLE_EXTRACT_CFG = DEFAULT_CONFIG.TABLE_EXTRACT
 
 
-def find_anchor_top(page, anchor_text: str) -> Optional[float]:
-    target = anchor_text.strip().upper()
-    for word in page.extract_words():
-        if word["text"].strip().upper().rstrip(":") == target:
-            return float(word["top"])
+def find_anchor_top(page, anchor_text: str, line_tolerance_pt: float = 2.0) -> Optional[float]:
+    target = " ".join(anchor_text.strip().upper().split())
+    words = sorted(page.extract_words(), key=lambda w: (w["top"], w["x0"]))
+    lines: list[list[dict]] = []
+    for word in words:
+        if lines and abs(word["top"] - lines[-1][-1]["top"]) <= line_tolerance_pt:
+            lines[-1].append(word)
+        else:
+            lines.append([word])
+    for line in lines:
+        line_text = " ".join(w["text"].strip().upper().rstrip(":") for w in line)
+        if target in line_text:
+            return float(min(w["top"] for w in line))
     return None
 
 
 def extract_table_pdfplumber_region(
     page,
     anchor_text: str = TABLE_EXTRACT_CFG.PDFPLUMBER_REGION_ANCHOR_TEXT,
+    end_anchor_text: Optional[str] = None,
     footer_buffer_pt: float = TABLE_EXTRACT_CFG.PDFPLUMBER_REGION_FOOTER_BUFFER_PT,
 ) -> Optional[pd.DataFrame]:
     try:
         top = find_anchor_top(page, anchor_text)
         if top is None:
             return None
-        bottom = page.height - footer_buffer_pt
+        if end_anchor_text:
+            end_top = find_anchor_top(page, end_anchor_text)
+            if end_top is None or end_top <= top:
+                return None
+            bottom = end_top - 2.0
+        else:
+            bottom = page.height - footer_buffer_pt
         if bottom <= top:
             return None
         cropped = page.crop((0, max(0.0, top - 2.0), page.width, bottom))
