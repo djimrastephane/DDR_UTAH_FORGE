@@ -82,10 +82,6 @@ They are not merged because `rag_pdf` is meant to stay reusable for a future non
 
 Some reference/demo scripts and docs from `DDR_RAG_Pipeline` are retained because they are useful architecture examples. Treat anything mentioning the original North Sea corpus, `Ensco120`, `JRP`, `ThetisField`, or `Block-A` as reference material unless it has been explicitly adapted for Utah FORGE.
 
-## Known Issues / TODO
-
-- [#1](https://github.com/djimrastephane/DDR_UTAH_FORGE/issues/1) - `camelot-py==1.0.9` pulls a vulnerable transitive `pypdf` on Python <3.12. The fix (bumping to `camelot-py==2.0.0`) is a backend swap that changes table-extraction output, not a routine version bump, and needs a full revalidation pass first.
-
 ## License
 
 [MIT](LICENSE).
