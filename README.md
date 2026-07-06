@@ -61,6 +61,13 @@ python scripts/extract_frac_sleeve_status.py
 python scripts/rebuild_field_analysis.py
 ```
 
+`data/raw/` and `data/processed/` are gitignored - neither the source PDFs nor
+the generated outputs are distributed via this repo. Anyone working with this
+project needs the raw PDFs placed in `data/raw/` first, then regenerates
+`data/processed/` locally with the command above (fast: ~1s/document). To
+force a full reprocessing of documents that already have output (e.g. after a
+pipeline change like the extraction backend swap in #1), add `--no-resume`.
+
 ## Launch The Dashboard
 
 ```bash
