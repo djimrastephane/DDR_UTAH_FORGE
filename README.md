@@ -68,6 +68,16 @@ project needs the raw PDFs placed in `data/raw/` first, then regenerates
 force a full reprocessing of documents that already have output (e.g. after a
 pipeline change like the extraction backend swap in #1), add `--no-resume`.
 
+`--build-index` (or a manual `scripts/build_index.py` run) is what regenerates
+each document's `embeddings.npy`/`chunk_meta.parquet` from its `chunks.parquet`.
+If you reprocess documents *without* it, those per-document embeddings go
+stale relative to the new chunks. `scripts/build_global_index.py` doesn't
+detect that staleness - it just concatenates whatever per-document embeddings
+and chunk metadata it finds - so running it against stale embeddings silently
+produces a `data/global_index/` where the vectors don't correspond to the
+chunk text. Always run `scripts/build_index.py` (or `--no-resume --build-index`)
+before `scripts/build_global_index.py` after any reprocessing.
+
 ## Launch The Dashboard
 
 ```bash
