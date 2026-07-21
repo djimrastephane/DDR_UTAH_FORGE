@@ -87,6 +87,19 @@ def _build_blocks(ops: pd.DataFrame) -> pd.DataFrame:
     return blocks
 
 
+def _compute_daily_npt(ops: pd.DataFrame) -> pd.DataFrame:
+    daily_npt = (
+        ops.groupby("dt")
+        .apply(lambda g: pd.Series({
+            "total_h": g["duration_hr"].sum(),
+            "npt_h":   g.loc[g["is_npt"], "duration_hr"].sum(),
+        }), include_groups=False)
+        .reset_index()
+    )
+    daily_npt["npt_pct"] = daily_npt["npt_h"] / daily_npt["total_h"].replace(0, 1) * 100
+    return daily_npt
+
+
 def page_operation_sequence() -> None:
     hdr = load_all_headers()
     _rig = hdr["rig_name"].dropna().mode()
@@ -286,15 +299,7 @@ def _render_well_performance(
         st.info("No depth data available.")
         return
 
-    daily_npt = (
-        ops.groupby("dt")
-        .apply(lambda g: pd.Series({
-            "total_h": g["duration_hr"].sum(),
-            "npt_h":   g.loc[g["is_npt"], "duration_hr"].sum(),
-        }), include_groups=False)
-        .reset_index()
-    )
-    daily_npt["npt_pct"] = daily_npt["npt_h"] / daily_npt["total_h"].replace(0, 1) * 100
+    daily_npt = _compute_daily_npt(ops)
 
     fig = go.Figure()
 
@@ -484,14 +489,7 @@ def _render_improvement_analysis(
         hdr_d = hdr_d.dropna(subset=["dt","depth_ft"]).sort_values("dt")
         hdr_d["dd"] = hdr_d["depth_ft"].diff().abs()
 
-        daily_npt = (
-            ops.groupby("dt")
-            .apply(lambda g: g.loc[g["is_npt"],"duration_hr"].sum() /
-                   g["duration_hr"].sum() * 100 if g["duration_hr"].sum() > 0 else 0,
-                   include_groups=False)
-            .rename("npt_pct")
-            .reset_index()
-        )
+        daily_npt = _compute_daily_npt(ops)[["dt", "npt_pct"]]
         flat_p = (
             hdr_d[hdr_d["dd"] < 1]
             .merge(daily_npt, on="dt", how="left")
