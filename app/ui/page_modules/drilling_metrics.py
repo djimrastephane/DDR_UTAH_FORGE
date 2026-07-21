@@ -9,11 +9,11 @@ import streamlit as st
 
 try:
     from .constants import PHASE_ORDER, PHASE_COLOURS
-    from .loaders import load_drilling_metrics, load_field_headers
+    from .loaders import load_drilling_metrics, load_all_headers
     from .utils import _apply_chart_theme
 except ImportError:
     from constants import PHASE_ORDER, PHASE_COLOURS          # type: ignore[no-redef]
-    from loaders import load_drilling_metrics, load_field_headers  # type: ignore[no-redef]
+    from loaders import load_drilling_metrics, load_all_headers  # type: ignore[no-redef]
     from utils import _apply_chart_theme                       # type: ignore[no-redef]
 
 _root = Path(__file__).resolve().parents[3]
@@ -153,6 +153,29 @@ def _stats_table(sub: pd.DataFrame, unit: str) -> go.Figure:
     fig.update_layout(margin=dict(l=0, r=0, t=5, b=0),
                       height=max(150, len(rows) * 26 + 60))
     return fig
+
+
+_TAB_CATEGORIES: list[tuple[str, str, list[str]]] = [
+    ("🔄", "Tripping Speed",     ["trip_speed"]),
+    ("⛏", "Rate of Penetration", ["rop_inst", "rop_avg", "rop_gen"]),
+    ("🔩", "Running Speeds",     ["casing_speed", "tubing_speed", "running_speed"]),
+    ("💧", "Flow Rate & WOB",    ["flow_rate", "wob"]),
+]
+
+
+def _render_coverage_summary(df: pd.DataFrame) -> None:
+    present = [label for _, label, types in _TAB_CATEGORIES if df["metric_type"].isin(types).any()]
+    missing = [label for _, label, types in _TAB_CATEGORIES if not df["metric_type"].isin(types).any()]
+
+    if not missing:
+        return
+
+    st.info(
+        f"**Found in this corpus:** {', '.join(present) if present else 'none'}.  \n"
+        f"**Not found:** {', '.join(missing)} — these measurements were not present in the "
+        "processed DDR text for this well. This is a report-format/corpus limitation, not an error.",
+        icon="ℹ️",
+    )
 
 
 def _render_kpis(df: pd.DataFrame) -> None:
@@ -397,7 +420,7 @@ def _render_tab_flow_wob(df: pd.DataFrame) -> None:
 def page_drilling_metrics() -> None:
     df = load_drilling_metrics()
 
-    hdr = load_field_headers()
+    hdr = load_all_headers()
     rig = hdr["rig_name"].dropna().mode().iloc[0] if not hdr.empty and "rig_name" in hdr.columns else "Rig"
 
     st.header(f"Drilling Metrics — {rig}")
@@ -407,30 +430,35 @@ def page_drilling_metrics() -> None:
     )
 
     if df.empty:
-        st.warning(
-            "No metrics file found. Run:  \n"
-            "`python scripts/extract_drilling_metrics.py`",
-            icon="⚠️",
+        st.info(
+            "No drilling-performance metrics have been extracted yet for this corpus.  \n"
+            "Run the extraction step from the Upload DDRs page, or "
+            "`python scripts/extract_drilling_metrics.py` directly — "
+            "if the corpus genuinely doesn't report these measurements, "
+            "this page will stay empty even after extraction runs.",
+            icon="ℹ️",
         )
         return
 
+    _render_coverage_summary(df)
     _render_kpis(df)
 
-    tab_trip, tab_rop, tab_run, tab_other = st.tabs([
-        "🔄 Tripping Speed",
-        "⛏ Rate of Penetration",
-        "🔩 Running Speeds",
-        "💧 Flow Rate & WOB",
-    ])
-
-    with tab_trip:
-        _render_tab_tripping(df)
-
-    with tab_rop:
-        _render_tab_rop(df)
-
-    with tab_run:
-        _render_tab_running(df)
-
-    with tab_other:
-        _render_tab_flow_wob(df)
+    tab_render_fns = {
+        "Tripping Speed":     _render_tab_tripping,
+        "Rate of Penetration": _render_tab_rop,
+        "Running Speeds":     _render_tab_running,
+        "Flow Rate & WOB":    _render_tab_flow_wob,
+    }
+    # Tabs with data first, so the user lands somewhere useful by default.
+    ordered = sorted(
+        _TAB_CATEGORIES,
+        key=lambda t: not df["metric_type"].isin(t[2]).any(),
+    )
+    labels = [
+        f"{icon} {label}" + ("" if df["metric_type"].isin(types).any() else " (no data)")
+        for icon, label, types in ordered
+    ]
+    tabs = st.tabs(labels)
+    for tab, (_, label, _types) in zip(tabs, ordered):
+        with tab:
+            tab_render_fns[label](df)
