@@ -482,10 +482,7 @@ def page_field_analysis() -> None:
     field_hdr = load_field_headers()
 
     if field_ops.empty:
-        st.warning(
-            "Multi-well data not found. "
-            "Run: `python scripts/build_synthetic_well.py`"
-        )
+        st.warning("Multi-well data not found.")
         return
 
     field_name = _derive_field_name(field_hdr)
