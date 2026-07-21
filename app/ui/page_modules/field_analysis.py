@@ -45,7 +45,7 @@ def _derive_field_name(hdr: pd.DataFrame) -> str:
 
 
 def _wellbore_label(wb: str) -> str:
-    return wb.replace("-", "/", 2)      # 30-07a-RB → 30/07a-RB
+    return wb.replace("-", "/", 2)      # 00-00a-RB → 00/00a-RB
 
 
 def _render_campaign_overview(
@@ -345,7 +345,7 @@ def _render_cross_ddr_search(
     if not question:
         st.markdown(
             "**Example questions:**\n"
-            "- What caused the extended PROD1 NPT on 30/07a-R2?\n"
+            "- What caused the extended PROD1 NPT on 00/00a-R2?\n"
             "- How was overpull at frac sleeves managed?\n"
             "- What MPD issues occurred during INTRM1?\n"
             "- Describe the COND1 liner loss events.\n"

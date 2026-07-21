@@ -15,7 +15,7 @@ def test_parse_ddr_filename_builds_wellbore_metadata_and_safe_doc_id() -> None:
     assert record.asset_or_project == "FLDX"
     assert record.wellbore_suffix == "R2"
     assert record.wellbore == "FLDX-R2"
-    assert record.block_wellbore == "30/07a-R2"
+    assert record.block_wellbore == "00/00a-R2"
     assert record.report_date == date(2024, 4, 18)
     assert record.safe_doc_id == "RigAlpha-DDR-007-FLDX-R2-2024-04-18"
 
@@ -103,7 +103,7 @@ def test_audit_flags_missing_reports_as_warnings(tmp_path: Path) -> None:
             "asset_or_project": "FLDX",
             "wellbore_suffix": "RB",
             "wellbore": "FLDX-RB",
-            "block_wellbore": "30/07a-RB",
+            "block_wellbore": "00/00a-RB",
             "inferred_filename": "RigAlpha DDR 2 FLDX RB 13.04.2024.pdf",
             "previous_source_filename": "RigAlpha DDR 1 FLDX RB 12.04.2024.pdf",
             "next_source_filename": "RigAlpha DDR 3 FLDX RB 14.04.2024.pdf",

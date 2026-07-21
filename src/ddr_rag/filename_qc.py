@@ -289,7 +289,7 @@ def build_safe_doc_id(
     return doc_id
 
 
-def parse_ddr_filename(path: str | Path, block_id: str = "30/07a") -> DDRFilenameRecord:
+def parse_ddr_filename(path: str | Path, block_id: str = "00/00a") -> DDRFilenameRecord:
     pdf_path = Path(path)
     filename = pdf_path.name
     if pdf_path.suffix.lower() != ".pdf":
@@ -500,7 +500,7 @@ def _missing_reports(parsed: list[DDRFilenameRecord]) -> tuple[list[dict[str, An
 def audit_raw_pdfs(
     raw_dir: str | Path,
     *,
-    block_id: str = "30/07a",
+    block_id: str = "00/00a",
     check_pdf_readability: bool = True,
 ) -> DDRFilenameAudit:
     raw_path = Path(raw_dir)

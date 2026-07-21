@@ -114,7 +114,7 @@ class GlobalSearchService:
         ----------
         question:    Natural language query.
         k:           Number of results to return.
-        doc_filter:  Optional doc_id prefix filter (e.g. "Ensco120-DDR-085").
+        doc_filter:  Optional doc_id prefix filter (e.g. "RigAlpha-DDR-085").
         date_from:   ISO date string "YYYY-MM-DD" — filter results on or after.
         date_to:     ISO date string "YYYY-MM-DD" — filter results on or before.
 
