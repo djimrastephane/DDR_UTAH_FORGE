@@ -173,10 +173,8 @@ def page_upload_ddrs() -> None:
             progress.progress(55, text="Extracting wellbore events…")
 
             for script, label, pct in [
-                ("scripts/extract_wellbore_events.py",     "wellbore events",   65),
-                ("scripts/extract_completion_string.py",   "completion string", 75),
-                ("scripts/extract_frac_sleeve_status.py",  "frac sleeve status",82),
-                ("scripts/rebuild_field_analysis.py",      "field analysis",    92),
+                ("scripts/extract_wellbore_events.py",     "wellbore events",   70),
+                ("scripts/build_graphs.py",                "operational graph", 92),
             ]:
                 _log(f"Running {script} …")
                 r = subprocess.run(

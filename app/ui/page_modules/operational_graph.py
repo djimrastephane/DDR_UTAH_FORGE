@@ -522,6 +522,9 @@ def _render_tab_engineering(graph_data: dict, enrichment: dict) -> None:
 
     st.subheader("All nodes — ranked by connectivity")
     nodes_df = pd.DataFrame(graph_data["nodes"])
+    if nodes_df.empty:
+        st.info("No nodes for this phase.")
+        return
     nodes_df["npt_ratio"] = nodes_df["npt_ratio"].map("{:.0%}".format)
     nodes_df["betweenness"] = nodes_df.get("betweenness", 0).map(
         lambda x: f"{x:.3f}" if isinstance(x, float) else "—"
@@ -545,9 +548,12 @@ def page_operational_graph(ops: pd.DataFrame) -> None:
     )
     c1, c2 = st.columns([3, 2])
     with c1:
+        _default_phase = next(
+            (p for p in ("Production Drilling", "PROD1") if p in phases), None
+        )
         phase = st.selectbox(
             "Drilling phase", phases, format_func=label_phase,
-            index=phases.index("PROD1") if "PROD1" in phases else 0,
+            index=phases.index(_default_phase) if _default_phase else 0,
             key="op_graph_phase",
         )
     with c2:

@@ -19,20 +19,12 @@ from loaders import (
 )
 
 from page_modules.operation_sequence import page_operation_sequence
-from page_modules.drilling_metrics   import page_drilling_metrics
-from page_modules.eowr               import page_eowr
 from page_modules.campaign_summary  import page_executive_summary
-from page_modules.field_analysis    import page_field_analysis
 from page_modules.well_overview     import page_well_overview
-from page_modules.well_schematic    import page_well_schematic, page_well_schematic_linkedin
 from page_modules.npt_intelligence  import page_npt_intelligence
-from page_modules.wellbore_events   import page_wellbore_events
-from page_modules.completion_string import page_completion_string
-from page_modules.cost_analysis     import page_cost_analysis
 from page_modules.upload_ddrs       import page_upload_ddrs
 from page_modules.operations_log    import page_operations_log
 from page_modules.operational_graph import page_operational_graph
-from page_modules.causality         import page_causality
 from page_modules.lessons_learned   import page_lessons_learned
 from page_modules.corpus_search     import page_corpus_search
 
@@ -43,7 +35,8 @@ _ENG_PAGES = [
     "🔩 Well Overview",
     "📈 NPT Intelligence",
     "🔄 Operation Sequence",
-    "📊 Drilling Metrics",
+    "🕸 Operational Graph",
+    "📝 Lessons Learned",
     "📋 Operations Log",
     "📥 Upload DDRs",
 ]
@@ -106,21 +99,9 @@ def main() -> None:
             _show_missing_processed_data(page)
             return
 
-    if page == "🌐 Field Analysis":      return page_field_analysis()
     if page == "🔍 Corpus Search":       return page_corpus_search()
-    if page == "🏗 Well Schematic":      return page_well_schematic()
-    if page == "📸 Schematic (LinkedIn)":return page_well_schematic_linkedin()
-    if page == "🧵 Completion String":   return page_completion_string()
     if page == "🔄 Operation Sequence":  return page_operation_sequence()
-    if page == "📊 Drilling Metrics":    return page_drilling_metrics()
-    if page == "📄 End of Well Report":  return page_eowr()
     if page == "📥 Upload DDRs":         return page_upload_ddrs()
-
-    if page == "⚡ Wellbore Events":
-        with st.spinner("Loading data..."):
-            events = load_wellbore_events()
-            ops    = load_all_ops()
-        return page_wellbore_events(events, ops)
 
     with st.spinner("Loading data..."):
         ops = load_all_ops()
@@ -139,14 +120,10 @@ def main() -> None:
         page_executive_summary(ops, hdr, load_wellbore_events())
     elif page == "🔩 Well Overview":
         page_well_overview(ops, hdr, **_kw)
-    elif page == "💰 Cost Analysis":
-        page_cost_analysis(ops, hdr)
     elif page == "🕸 Operational Graph":
         page_operational_graph(ops)
     elif page == "📈 NPT Intelligence":
         page_npt_intelligence(ops)
-    elif page == "🔗 Cross-Phase Causality":
-        page_causality(ops)
     elif page == "📝 Lessons Learned":
         page_lessons_learned(ops, load_wellbore_events())
     elif page == "📋 Operations Log":
