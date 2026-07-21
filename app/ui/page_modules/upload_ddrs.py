@@ -14,6 +14,10 @@ try:
 except ImportError:
     from constants import repo_root  # type: ignore[no-redef]
 
+WELL_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$")
+RIG_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 ._-]{0,119}$")
+
+
 def page_upload_ddrs() -> None:
     st.header("Upload DDRs")
     st.caption(
@@ -38,6 +42,19 @@ def page_upload_ddrs() -> None:
             well_id = st.text_input("Well ID (e.g. FORGE-16A-78-32)", value="FORGE-16A-78-32")
 
     rig_name = st.text_input("Rig name (used in filename)", value="UtahForge")
+
+    if not WELL_ID_RE.fullmatch(well_id or ""):
+        st.error(
+            "Well ID must start with a letter/number and contain only letters, "
+            "numbers, `.`, `_`, or `-` (no spaces or path separators)."
+        )
+        st.stop()
+    if not RIG_NAME_RE.fullmatch(rig_name or ""):
+        st.error(
+            "Rig name must start with a letter/number and contain only letters, "
+            "numbers, spaces, `.`, `_`, or `-`."
+        )
+        st.stop()
 
     st.subheader("2 · Upload PDFs")
     st.info(
@@ -126,10 +143,15 @@ def page_upload_ddrs() -> None:
 
             progress.progress(20, text="Preprocessing PDFs…")
 
-            well_dir = repo_root / "data" / "fields" / "UtahForge" / "wells" / well_id
+            wells_root = (repo_root / "data" / "fields" / "UtahForge" / "wells").resolve()
+            well_dir = (wells_root / well_id).resolve()
+            try:
+                well_dir.relative_to(wells_root)
+            except ValueError:
+                st.error("Unsafe well ID path.")
+                return
             well_dir.mkdir(parents=True, exist_ok=True)
-            safe_rig  = rig_name.replace(" ", "")
-            safe_well = well_id.replace("/", "-").replace(" ", "_")
+            safe_rig = rig_name.replace(" ", "")
             prefix = f"{safe_rig}-DDR-"
             ids_file = well_dir / "ddr_ids.txt"
             existing_prefixes = set(ids_file.read_text().splitlines()) if ids_file.exists() else set()
