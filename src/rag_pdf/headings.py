@@ -61,7 +61,7 @@ def looks_like_lettered_subsection(line: str) -> bool:
 def is_section_anchor_line(line: str) -> bool:
     # Conservative: keeps true section markers while removing global boilerplate.
     # Intended positives: OPERATION SUMMARY, PERSONNEL DATA, PLANNED TIME SUMMARY.
-    # Intended negatives: HARBOUR ENERGY, DAILY WELL OPERATION.
+    # Intended negatives: OPERATOR NAME, DAILY WELL OPERATION.
     if not isinstance(line, str):
         return False
 
