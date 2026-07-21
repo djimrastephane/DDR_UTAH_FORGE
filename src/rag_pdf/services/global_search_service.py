@@ -2,7 +2,7 @@
 Global cross-document search service for the DDR corpus.
 
 Loads the pre-built global FAISS index (data/global_index/) and supports
-hybrid BM25 + dense retrieval across all 14,879 chunks from all 171 DDRs.
+hybrid BM25 + dense retrieval across all chunks from all processed DDRs.
 
 Usage
 -----

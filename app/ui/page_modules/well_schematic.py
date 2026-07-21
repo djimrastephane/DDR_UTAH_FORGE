@@ -10,10 +10,10 @@ from plotly.subplots import make_subplots
 import streamlit as st
 
 try:
-    from .loaders import load_wellbore_events, load_casing, load_fit_lot
+    from .loaders import load_wellbore_events, load_casing, load_fit_lot, load_all_headers
     from .utils import _apply_chart_theme, _ddr_citation_row
 except ImportError:
-    from loaders import load_wellbore_events, load_casing, load_fit_lot  # type: ignore[no-redef]
+    from loaders import load_wellbore_events, load_casing, load_fit_lot, load_all_headers  # type: ignore[no-redef]
     from utils import _apply_chart_theme, _ddr_citation_row              # type: ignore[no-redef]
 
 
@@ -266,6 +266,7 @@ def page_well_schematic() -> None:
     casing  = load_casing()
     events  = load_wellbore_events()
     fit_lot = load_fit_lot()
+    n_ddrs  = len(load_all_headers())
 
     if casing.empty:
         st.warning("No casing data. Run `scripts/extract_well_sections.py` first.")
@@ -294,9 +295,9 @@ def page_well_schematic() -> None:
         _dense_lo = int(_bins.index[0].left)
         _dense_hi = int(_bins.index[0].right)
         st.info(
-            f"**{len(events):,} wellbore events** across 171 DDRs  ·  "
+            f"**{len(events):,} wellbore events** across {n_ddrs} DDRs  ·  "
             f"**{_prod_pct}% in the production section** (12,000 ft – TD)  ·  "
-            f"Peak overpull **{_peak_op:.0f} klbs** (stuck pipe, Apr 2024)  ·  "
+            f"Peak overpull **{_peak_op:.0f} klbs**  ·  "
             f"Highest density **{_dense_lo:,}–{_dense_hi:,} ft MD**"
         )
     st.divider()

@@ -665,10 +665,6 @@ def _build_markdown_export(
 
 def page_eowr() -> None:
     st.header("End of Well Report")
-    st.caption(
-        "Auto-generated from 171 DDRs (Apr – Oct 2024) following UK North Sea / "
-        "NSTA standard EOWR structure. All data extracted from Daily Drilling Reports."
-    )
 
     with st.spinner("Compiling EOWR…"):
         ops     = load_all_ops()
@@ -682,6 +678,15 @@ def page_eowr() -> None:
     ops["npt_category"] = classify_ops_df(ops)
     hdr["dt"]          = pd.to_datetime(hdr["report_date"], dayfirst=True, errors="coerce")
     hdr = hdr.sort_values("dt")
+
+    _date_range = (
+        f"{hdr['dt'].min():%b %Y} – {hdr['dt'].max():%b %Y}"
+        if hdr["dt"].notna().any() else "—"
+    )
+    st.caption(
+        f"Auto-generated from {len(hdr)} DDRs ({_date_range}). "
+        "All data extracted from Daily Drilling Reports."
+    )
 
     hdr["depth_n"] = hdr["end_depth_md_ft"].apply(_parse_num)
     hdr["cost_n"]  = hdr["daily_cost"].apply(_parse_num)

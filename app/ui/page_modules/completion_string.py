@@ -726,10 +726,8 @@ def page_completion_string() -> None:
 
     st.header("Completion String")
     st.caption(
-        "Completion components extracted from 171 DDRs (phases PROD1 + COMPZN). "
-        "Depths for DHSV, gauge mandrel and HPS packer are calculated from the running sequence; "
-        "all other depths are confirmed in DDR text. "
-        "Frac sleeve depths #1–5 are estimated by extrapolation (not fracked)."
+        "Completion components extracted from processed DDRs. "
+        "Depth source (confirmed / calculated / estimated) is noted per component."
     )
 
     min_id = df["id_in"].dropna().min()

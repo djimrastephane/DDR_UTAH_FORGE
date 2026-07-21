@@ -5,9 +5,9 @@ import re
 import streamlit as st
 
 try:
-    from .loaders import load_global_search, _looks_like_aggregate, _run_search
+    from .loaders import load_global_search, _looks_like_aggregate, _run_search, load_all_headers
 except ImportError:
-    from loaders import load_global_search, _looks_like_aggregate, _run_search  # type: ignore[no-redef]
+    from loaders import load_global_search, _looks_like_aggregate, _run_search, load_all_headers  # type: ignore[no-redef]
 
 
 _SCORE_HIGH = 0.60
@@ -77,8 +77,9 @@ def _render_results(results: list[dict], question: str) -> None:
 
 def page_corpus_search() -> None:
     st.header("Corpus Search")
+    n_ddrs = len(load_all_headers())
     st.caption(
-        "Search across all 171 daily drilling reports simultaneously. "
+        f"Search across all {n_ddrs} daily drilling reports simultaneously. "
         "Returns the most relevant operational passages ranked by semantic similarity."
     )
 
@@ -88,7 +89,7 @@ def page_corpus_search() -> None:
 
     question = st.text_input(
         "Ask a question about any operation on this well",
-        placeholder="e.g. What caused the overpull at frac sleeve #1?",
+        placeholder="e.g. What caused the NPT on the intermediate casing section?",
         key="global_search_q",
     )
 
@@ -109,11 +110,11 @@ def page_corpus_search() -> None:
     if not question:
         st.markdown(
             "**Example questions:**\n"
-            "- What caused the NPT on the conductor section?\n"
-            "- What was observed when running across Frac Sleeve #1?\n"
+            "- What caused the NPT on the intermediate casing section?\n"
             "- Which operations required reduced tripping speed?\n"
             "- What happened on days with overpull above 20 klbs?\n"
-            "- When did back-flow first appear during completion operations?"
+            "- What issues occurred while running production casing?\n"
+            "- When was the surface casing cemented and how long did it take?"
         )
         return
 
