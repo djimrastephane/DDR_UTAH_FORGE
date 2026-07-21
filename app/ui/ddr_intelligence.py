@@ -7,26 +7,15 @@ import streamlit as st
 
 _repo_root = Path(__file__).resolve().parents[2]
 _ui_dir    = Path(__file__).resolve().parent
-_demos_dir = _repo_root / "demos"
 
-for _p in (str(_repo_root / "src"), str(_ui_dir), str(_demos_dir)):
+for _p in (str(_repo_root / "src"), str(_ui_dir)):
     if _p not in sys.path:
         sys.path.insert(0, _p)
-
-try:
-    from linkedin_demo import page_linkedin_demo as _page_linkedin_demo
-    from demo_helpers import inject_demo_css as _inject_demo_css
-    _DEMO_AVAILABLE = True
-except ImportError:
-    _DEMO_AVAILABLE     = False
-    _page_linkedin_demo = None
-    _inject_demo_css    = None
 
 from loaders import (
     load_all_ops, load_all_headers,
     load_weather, load_planned_time, load_vessels,
     load_wellbore_events,
-    load_graph, load_global_search, _run_search,
 )
 
 from page_modules.operation_sequence import page_operation_sequence
@@ -96,16 +85,12 @@ def main() -> None:
     st.sidebar.caption("Utah FORGE · FORGE-16A-78-32")
     st.sidebar.divider()
 
-    demo_pages = []
-
     page = st.sidebar.radio(
         "Navigation",
-        _EXEC_PAGES + _ENG_PAGES + _INV_PAGES + demo_pages,
+        _EXEC_PAGES + _ENG_PAGES + _INV_PAGES,
         label_visibility="collapsed",
     )
     st.sidebar.divider()
-
-    demo_mode = confidential_mode = False
 
     st.sidebar.caption("v2.0")
 
@@ -113,22 +98,6 @@ def main() -> None:
     if st.session_state.get("_active_page") != page:
         st.session_state["_active_page"] = page
         st.rerun()
-
-    if demo_mode and _inject_demo_css is not None:
-        _inject_demo_css()
-
-    if page == "🎬 LinkedIn Demo" and _page_linkedin_demo is not None:
-        with st.spinner("Loading demo data…"):
-            _d_ops    = load_all_ops()
-            _d_hdr    = load_all_headers()
-            _d_events = load_wellbore_events()
-            _d_graph  = load_graph("PROD1", "Same row")
-        _page_linkedin_demo(
-            ops=_d_ops, hdr=_d_hdr, events=_d_events, graph_data=_d_graph,
-            run_search_fn=_run_search, load_index_fn=load_global_search,
-            confidential_mode=confidential_mode,
-        )
-        return
 
     if page in _REQUIRES_PROCESSED_DATA:
         _ops_probe = load_all_ops()
