@@ -71,4 +71,4 @@ Duplicate same-day files are warnings, not blockers, because the raw folder curr
 - Use Python 3.11+.
 - Prefer `pathlib` for file handling.
 - Add focused tests for parsing, extraction, and transformation changes.
-- Keep broad architectural examples from the reference project only when they remain useful; do not treat old `Ensco120`, `JRP`, `ThetisField`, or `Block-A` references as Utah FORGE defaults.
+- Keep broad architectural examples from the reference project only when they remain useful; do not treat old `RigAlpha`, `FieldX`, or `Block-A` reference/example names as Utah FORGE defaults.

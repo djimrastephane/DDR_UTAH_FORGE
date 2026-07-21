@@ -7,25 +7,25 @@ from ddr_rag.filename_qc import audit_raw_pdfs, build_safe_doc_id, parse_ddr_fil
 
 
 def test_parse_ddr_filename_builds_wellbore_metadata_and_safe_doc_id() -> None:
-    record = parse_ddr_filename("data/raw/Ensco120 DDR 7 JRP R2 18.04.2024.pdf")
+    record = parse_ddr_filename("data/raw/RigAlpha DDR 7 FLDX R2 18.04.2024.pdf")
 
     assert record.parsed
-    assert record.rig == "Ensco120"
+    assert record.rig == "RigAlpha"
     assert record.ddr_number == 7
-    assert record.asset_or_project == "JRP"
+    assert record.asset_or_project == "FLDX"
     assert record.wellbore_suffix == "R2"
-    assert record.wellbore == "JRP-R2"
+    assert record.wellbore == "FLDX-R2"
     assert record.block_wellbore == "30/07a-R2"
     assert record.report_date == date(2024, 4, 18)
-    assert record.safe_doc_id == "Ensco120-DDR-007-JRP-R2-2024-04-18"
+    assert record.safe_doc_id == "RigAlpha-DDR-007-FLDX-R2-2024-04-18"
 
 
 def test_parse_ddr_filename_flags_formatting_warnings_without_failing() -> None:
-    record = parse_ddr_filename("data/raw/Ensco120 DDR 107JRP R2 27.07.2024..pdf")
+    record = parse_ddr_filename("data/raw/RigAlpha DDR 107FLDX R2 27.07.2024..pdf")
 
     assert record.parsed
     assert record.ddr_number == 107
-    assert record.safe_doc_id == "Ensco120-DDR-107-JRP-R2-2024-07-27"
+    assert record.safe_doc_id == "RigAlpha-DDR-107-FLDX-R2-2024-07-27"
     assert "missing_space_after_ddr_number" in record.warnings
     assert "extra_dot_before_pdf_extension" in record.warnings
 
@@ -76,19 +76,19 @@ def test_audit_allows_utah_forge_same_day_copies_without_blocking(tmp_path: Path
 
 def test_safe_doc_id_uses_three_digit_ddr_number() -> None:
     doc_id = build_safe_doc_id(
-        rig="Ensco120",
+        rig="RigAlpha",
         ddr_number=1,
-        asset_or_project="JRP",
+        asset_or_project="FLDX",
         wellbore_suffix="RB",
         report_date=date(2024, 4, 12),
     )
 
-    assert doc_id == "Ensco120-DDR-001-JRP-RB-2024-04-12"
+    assert doc_id == "RigAlpha-DDR-001-FLDX-RB-2024-04-12"
 
 
 def test_audit_flags_missing_reports_as_warnings(tmp_path: Path) -> None:
-    (tmp_path / "Ensco120 DDR 1 JRP RB 12.04.2024.pdf").write_bytes(b"not checked")
-    (tmp_path / "Ensco120 DDR 3 JRP RB 14.04.2024.pdf").write_bytes(b"not checked")
+    (tmp_path / "RigAlpha DDR 1 FLDX RB 12.04.2024.pdf").write_bytes(b"not checked")
+    (tmp_path / "RigAlpha DDR 3 FLDX RB 14.04.2024.pdf").write_bytes(b"not checked")
 
     audit = audit_raw_pdfs(tmp_path, check_pdf_readability=False)
 
@@ -99,14 +99,14 @@ def test_audit_flags_missing_reports_as_warnings(tmp_path: Path) -> None:
             "issue_type": "missing_report",
             "expected_ddr_number": 2,
             "expected_report_date": "2024-04-13",
-            "rig": "Ensco120",
-            "asset_or_project": "JRP",
+            "rig": "RigAlpha",
+            "asset_or_project": "FLDX",
             "wellbore_suffix": "RB",
-            "wellbore": "JRP-RB",
+            "wellbore": "FLDX-RB",
             "block_wellbore": "30/07a-RB",
-            "inferred_filename": "Ensco120 DDR 2 JRP RB 13.04.2024.pdf",
-            "previous_source_filename": "Ensco120 DDR 1 JRP RB 12.04.2024.pdf",
-            "next_source_filename": "Ensco120 DDR 3 JRP RB 14.04.2024.pdf",
+            "inferred_filename": "RigAlpha DDR 2 FLDX RB 13.04.2024.pdf",
+            "previous_source_filename": "RigAlpha DDR 1 FLDX RB 12.04.2024.pdf",
+            "next_source_filename": "RigAlpha DDR 3 FLDX RB 14.04.2024.pdf",
         }
     ]
     assert any(issue.issue_type == "missing_report" for issue in audit.issues)

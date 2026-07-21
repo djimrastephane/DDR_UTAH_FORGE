@@ -97,7 +97,7 @@ They are not merged because `rag_pdf` is meant to stay reusable for a future non
 
 ## Notes
 
-Some reference/demo scripts and docs from `DDR_RAG_Pipeline` are retained because they are useful architecture examples. Treat anything mentioning the original North Sea corpus, `Ensco120`, `JRP`, `ThetisField`, or `Block-A` as reference material unless it has been explicitly adapted for Utah FORGE.
+Some reference/demo scripts and docs from `DDR_RAG_Pipeline` are retained because they are useful architecture examples. Treat anything mentioning the original reference corpus, `RigAlpha`, `FieldX`, or `Block-A` as reference material unless it has been explicitly adapted for Utah FORGE.
 
 ## License
 

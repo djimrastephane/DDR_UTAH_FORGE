@@ -494,7 +494,7 @@ def load_global_search() -> bool:
 
 @st.cache_data(show_spinner=False)
 def load_corpus_gaps() -> list[dict]:
-    legacy_pattern = re.compile(r"Ensco120-DDR-(\d+)-JRP-\w+-(\d{4}-\d{2}-\d{2})$")
+    legacy_pattern = re.compile(r"RigAlpha-DDR-(\d+)-FLDX-\w+-(\d{4}-\d{2}-\d{2})$")
     utah_pattern = re.compile(
         r"UtahForge-DDR-FORGE-16A-78-32-\w+-(\d{4}-\d{2}-\d{2})-R\d+-[a-f0-9]{8}$"
     )
