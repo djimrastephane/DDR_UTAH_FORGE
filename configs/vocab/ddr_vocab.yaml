@@ -568,16 +568,10 @@ abbreviation_map:
   # Drill bit types
   - {abbr: "pdc",     expands_to: "pdc-bit"}
   # Company / service names — drop (not operationally distinctive graph nodes)
-  - {abbr: "rmec",    expands_to: null}
-  - {abbr: "jtl",     expands_to: null}
-  - {abbr: "ensco",   expands_to: null}
   - {abbr: "vms",     expands_to: null}
   - {abbr: "trs",     expands_to: "tubular-running-services"}
   - {abbr: "oes",     expands_to: null}
   - {abbr: "opecs",   expands_to: "operational-performance-evaluation-control-system"}
-  # Proper nouns — drop (well/field names, platform structure IDs)
-  - {abbr: "judy",    expands_to: null}
-  - {abbr: "jrp",     expands_to: null}
   # OCR split artefacts — drop (fragments of OPERATIONSUMMARY, DRILLING ORIGINAL, MUD DATA)
   - {abbr: "opera",   expands_to: null}
   - {abbr: "mary",    expands_to: null}
