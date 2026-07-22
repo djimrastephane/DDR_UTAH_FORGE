@@ -325,3 +325,30 @@ def classify_ops_df(df: "pd.DataFrame") -> "pd.Series":
         )
 
     return df.apply(_classify_row, axis=1)
+
+
+# Sub-types within the "equipment" NPT category, ordered by specificity.
+# Mirrors the equipment keywords already used to classify a row as
+# "equipment" NPT in the first place (see the "equipment" rule above) —
+# this just surfaces *which* keyword matched instead of collapsing
+# everything to one label.
+EQUIPMENT_SUBTYPE_PATTERNS: list[tuple[str, str]] = [
+    ("Pump",               r"\bpump\b"),
+    ("Top Drive",          r"\btop.?drive\b"),
+    ("Hydraulic System",   r"\bhydraul"),
+    ("Motor / Electrical", r"\bmotor\b|\belectric"),
+    ("Valve",              r"\bvalve\b"),
+    ("Cable",              r"\bcable\b"),
+    ("Crane",              r"\bcrane\b"),
+]
+
+
+def classify_equipment_subtype(text: str) -> str:
+    """Return which specific equipment type an "equipment" NPT row's text
+    mentions (Pump, Top Drive, Hydraulic System, ...), or "Unspecified" if
+    the text doesn't name a recognised equipment type."""
+    t = str(text or "").lower()
+    for label, pattern in EQUIPMENT_SUBTYPE_PATTERNS:
+        if re.search(pattern, t):
+            return label
+    return "Unspecified"

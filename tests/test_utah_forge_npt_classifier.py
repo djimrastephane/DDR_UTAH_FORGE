@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ddr_rag.npt_classifier import classify_utah_forge_npt
+from ddr_rag.npt_classifier import classify_equipment_subtype, classify_utah_forge_npt
 
 
 def test_utah_forge_no_losses_is_not_npt() -> None:
@@ -46,4 +46,22 @@ def test_utah_forge_failed_packer_setting_is_downhole_tool_npt() -> None:
 
     assert is_npt is True
     assert category == "downhole_tools"
+
+
+def test_equipment_subtype_identifies_pump() -> None:
+    assert classify_equipment_subtype(
+        "Mud pump number one went down; bearing broke."
+    ) == "Pump"
+
+
+def test_equipment_subtype_identifies_hydraulic() -> None:
+    assert classify_equipment_subtype(
+        "Hydraulic line failed on grabber box. Replace line."
+    ) == "Hydraulic System"
+
+
+def test_equipment_subtype_falls_back_to_unspecified() -> None:
+    assert classify_equipment_subtype(
+        "Equipment failure caused delay. Repair completed."
+    ) == "Unspecified"
 

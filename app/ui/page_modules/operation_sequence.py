@@ -24,6 +24,37 @@ if str(_root / "src") not in sys.path:
 from ddr_rag.vocab import label_phase, label_op_code
 from ddr_rag.npt_classifier import apply_corpus_npt_rules, classify_ops_df, CATEGORY_LABELS, CATEGORY_COLOURS
 
+# Operation types that structurally produce no depth gain and are a normal
+# part of a drilling programme (casing, cementing, logging, pressure tests,
+# rig moves). No planned-time programme exists for this well, so this is a
+# structural classification of the op_code field, not a comparison to a plan.
+_EXPECTED_FLAT_OP_CODES: frozenset[str] = frozenset({
+    "Run Csg & Cement", "Wire Line Logs", "Test B.O.P.", "Nipple Up B.O.P.",
+    "Wait on Cement", "Rig Up & Tear Down", "Cut off Drill Line",
+    "Rig Service", "Lubricate Rig", "Clean Out Hole",
+})
+
+# Flat-time op_codes that are normal operational support/overhead (trips,
+# mud conditioning, directional surveys) rather than a non-drilling
+# activity or an unexplained gap.
+_OPERATIONAL_FLAT_OP_CODES: frozenset[str] = frozenset({
+    "Trips", "Cond Mud & Circ", "Circulating", "Reaming", "Dir Work", "Coring",
+})
+
+
+def _classify_flat_day(day_ops: pd.DataFrame) -> str:
+    """Bucket one no-depth-gain, non-NPT-flagged day by its dominant op_code."""
+    if day_ops.empty or day_ops["op_code"].isna().all():
+        return "Unclassified — needs review"
+    dominant = str(
+        day_ops.groupby("op_code")["duration_hr"].sum().idxmax() or ""
+    ).strip()
+    if dominant in _EXPECTED_FLAT_OP_CODES:
+        return "Expected (non-drilling)"
+    if dominant in _OPERATIONAL_FLAT_OP_CODES:
+        return "Operational / support"
+    return "Unclassified — needs review"
+
 def _first_sentence(text: str, max_chars: int = 180) -> str:
     if not text:
         return ""
@@ -353,11 +384,50 @@ def _render_well_performance(
     df_m = depth_df.merge(daily_npt[["dt","npt_pct"]], on="dt", how="left")
     df_m["depth_delta"] = df_m["depth_ft"].diff().abs()
     flat  = df_m[(df_m["depth_delta"] < 1) & (df_m.index > 0)]
-    c1,c2,c3 = st.columns(3)
-    c1.metric("Days with no depth gain",          len(flat))
-    c2.metric("  -> Flagged NPT",                int((flat["npt_pct"] > 50).sum()))
-    c3.metric("  -> Not flagged",                int((flat["npt_pct"] <= 50).sum()),
-              help="No depth progress without an NPT flag; review the DDR text before treating as avoidable time")
+
+    st.markdown("**Flat Time Reconciliation**")
+    st.caption(
+        "No planned-time programme exists for this well, so \"Expected\" below means "
+        "the day's operations were structurally non-drilling (casing, cementing, "
+        "logging, BOP tests, rig moves) — not a comparison to an actual plan."
+    )
+
+    confirmed_npt = flat[flat["npt_pct"] > 50]
+    flat_other    = flat[flat["npt_pct"] <= 50].copy()
+    flat_other["bucket"] = [
+        _classify_flat_day(ops[ops["dt"] == d]) for d in flat_other["dt"]
+    ]
+    n_expected     = int((flat_other["bucket"] == "Expected (non-drilling)").sum())
+    n_operational  = int((flat_other["bucket"] == "Operational / support").sum())
+    n_unclassified = int((flat_other["bucket"] == "Unclassified — needs review").sum())
+
+    r1, r2, r3, r4 = st.columns(4)
+    r1.metric("Days with no depth gain", len(flat))
+    r2.metric("Confirmed NPT", len(confirmed_npt))
+    r3.metric("Expected / operational support", n_expected + n_operational,
+              help=f"{n_expected} expected non-drilling (casing/cement/logging/BOP/rig move) "
+                   f"+ {n_operational} operational support (trips/circulating/conditioning/surveys)")
+    r4.metric("Unclassified — needs review", n_unclassified,
+              help="No depth progress, not flagged as NPT, and not dominated by an expected "
+                   "non-drilling or support operation — review the DDR text before treating "
+                   "as avoidable time.")
+
+    review_days = flat_other[flat_other["bucket"] == "Unclassified — needs review"]
+    if not review_days.empty:
+        with st.expander(f"Days needing review ({len(review_days)})"):
+            rows = []
+            for d in review_days["dt"]:
+                day_ops = ops[ops["dt"] == d]
+                dominant = (
+                    day_ops.groupby("op_code")["duration_hr"].sum().idxmax()
+                    if not day_ops.empty and not day_ops["op_code"].isna().all() else "—"
+                )
+                rows.append({
+                    "Date": d.strftime("%d %b %Y"),
+                    "Dominant op type": label_op_code(dominant) if dominant != "—" else "—",
+                    "Hours logged": f"{day_ops['duration_hr'].sum():.1f}h",
+                })
+            st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
 
 
 

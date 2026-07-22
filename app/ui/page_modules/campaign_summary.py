@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -21,7 +22,26 @@ if str(_ui_root / "src") not in sys.path:
     sys.path.insert(0, str(_ui_root / "src"))
 
 from ddr_rag.vocab import label_phase
-from ddr_rag.npt_classifier import CATEGORY_LABELS
+from ddr_rag.npt_classifier import CATEGORY_LABELS, classify_equipment_subtype
+
+
+_EQUIPMENT_ACTION_TEMPLATES: dict[str, str] = {
+    "Pump":               "Verify pump maintenance schedule and spares availability before the next well.",
+    "Top Drive":          "Verify top drive service history and spares before the next well.",
+    "Hydraulic System":   "Inspect hydraulic lines/connections and stage spares before the next well.",
+    "Motor / Electrical": "Verify motor/electrical spares and inspection schedule before the next well.",
+    "Valve":              "Verify valve maintenance and spares before the next well.",
+    "Cable":              "Inspect cable/connector condition and stage spares before the next well.",
+    "Crane":              "Verify crane inspection and maintenance schedule before the next well.",
+}
+
+
+def _first_words(text: str, max_chars: int = 120) -> str:
+    text = re.sub(r"^\d{2}:\d{2}\s[\d.]+.*\n?", "", str(text or ""), flags=re.M).strip()
+    text = re.sub(r"\s+", " ", text)
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars].rsplit(" ", 1)[0] + "…"
 
 
 def _derive_caption(hdr: pd.DataFrame) -> str:
@@ -48,6 +68,67 @@ def _render_kpis(ops: pd.DataFrame, hdr: pd.DataFrame,
     k2.metric("Reported Time",    f"{total_h:,.0f} hrs")
     k3.metric("Max Depth (MD)",   f"{max_depth:,.0f} ft")
     k4.metric("Flagged NPT",      f"{npt_h:,.0f} hrs", f"{npt_pct:.1f}% of well time")
+
+
+def _render_superintendent_takeaways(ops: pd.DataFrame) -> None:
+    npt_ops = ops[ops["is_npt"]].copy()
+    if npt_ops.empty:
+        return
+
+    with st.container(border=True):
+        st.markdown("##### 🎯 Superintendent Takeaways")
+
+        cat_h = npt_ops.groupby("npt_cat_label")["duration_hr"].sum().sort_values(ascending=False)
+        top_cat_label = str(cat_h.index[0])
+        top_cat_h = float(cat_h.iloc[0])
+        st.markdown(f"**Primary NPT driver:** {top_cat_label}, {top_cat_h:.0f} h")
+
+        top_event = npt_ops.nlargest(1, "duration_hr").iloc[0]
+        event_desc = _first_words(str(top_event.get("operation_text") or ""))
+        st.markdown(
+            f"**Largest single event:** {event_desc} "
+            f"— {float(top_event['duration_hr']):.1f} h "
+            f"({top_event.get('report_date', '')})"
+        )
+
+        # Require a meaningful denominator (>=24h) so a tiny phase with one
+        # bad hour doesn't dominate the ranking.
+        phase_rows = []
+        for ph in PHASE_ORDER:
+            g = ops[ops["phase"] == ph]
+            tot = float(g["duration_hr"].sum())
+            if tot < 24:
+                continue
+            npt = float(g.loc[g["is_npt"], "duration_hr"].sum())
+            phase_rows.append((ph, 100 * npt / tot))
+        if phase_rows:
+            top_phase, top_phase_pct = max(phase_rows, key=lambda r: r[1])
+            st.markdown(f"**Highest-risk phase:** {label_phase(top_phase)}, {top_phase_pct:.0f}% NPT")
+
+        top_cat_code = str(
+            npt_ops.groupby("npt_category")["duration_hr"].sum()
+            .sort_values(ascending=False).index[0]
+        )
+        if top_cat_code == "equipment":
+            eq = npt_ops[npt_ops["npt_category"] == "equipment"].copy()
+            eq["subtype"] = eq["operation_text"].apply(classify_equipment_subtype)
+            sub_stats = (
+                eq[eq["subtype"] != "Unspecified"]
+                .groupby("subtype")["duration_hr"].agg(["sum", "count"])
+                .sort_values("sum", ascending=False)
+            )
+            if not sub_stats.empty and sub_stats.iloc[0]["count"] >= 2:
+                subtype = str(sub_stats.index[0])
+                s_h, s_n = float(sub_stats.iloc[0]["sum"]), int(sub_stats.iloc[0]["count"])
+                st.markdown(f"**Main repeat issue:** {subtype}-related failures ({s_n} events, {s_h:.1f} h)")
+                action = _EQUIPMENT_ACTION_TEMPLATES.get(subtype)
+                if action:
+                    st.markdown(f"**Planning action:** {action}")
+
+        st.caption(
+            "Derived directly from classified DDR operation rows — not a plan or "
+            "offset-well comparison (neither is available for this well)."
+        )
 
 
 def _render_phase_performance(ops: pd.DataFrame) -> None:
@@ -372,6 +453,9 @@ def page_executive_summary(ops: pd.DataFrame, hdr: pd.DataFrame,
     npt_pct = 100 * npt_h / total_h if total_h else 0
 
     _render_kpis(ops, hdr, events, npt_h, npt_pct)
+    st.divider()
+
+    _render_superintendent_takeaways(ops)
     st.divider()
 
     col_left, col_right = st.columns([3, 2], gap="large")
