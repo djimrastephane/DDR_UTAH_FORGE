@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ddr-utah-forge"
-version = "0.1.0"
+version = "2.0.0"
 description = "RAG pipeline and intelligence dashboard for Utah FORGE DDRs."
 requires-python = ">=3.11"
 dependencies = [

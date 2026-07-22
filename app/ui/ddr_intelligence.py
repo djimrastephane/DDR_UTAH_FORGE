@@ -1,12 +1,24 @@
 from __future__ import annotations
 
 import sys
+import tomllib
 from pathlib import Path
 
 import streamlit as st
 
 _repo_root = Path(__file__).resolve().parents[2]
 _ui_dir    = Path(__file__).resolve().parent
+
+
+def _app_version() -> str:
+    """Single source of truth is pyproject.toml's [project] version — avoids
+    the sidebar drifting out of sync with the package version (it silently
+    read a stale hardcoded "v2.0" for a while when pyproject.toml said 0.1.0)."""
+    try:
+        with open(_repo_root / "pyproject.toml", "rb") as f:
+            return tomllib.load(f)["project"]["version"]
+    except Exception:
+        return "unknown"
 
 for _p in (str(_repo_root / "src"), str(_ui_dir)):
     if _p not in sys.path:
@@ -87,7 +99,7 @@ def main() -> None:
     )
     st.sidebar.divider()
 
-    st.sidebar.caption("v2.0")
+    st.sidebar.caption(f"v{_app_version()}")
 
     # ── Force clean rerun on page change ─────────────────────────────────────
     if st.session_state.get("_active_page") != page:

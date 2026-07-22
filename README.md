@@ -1,5 +1,7 @@
 # DDR_UTAH_FORGE
 
+**Version 2.0.0** — see [CHANGELOG.md](CHANGELOG.md) for release history.
+
 **Turns a stack of scanned daily drilling reports (DDRs) into a searchable, structured drilling-performance dashboard.**
 
 Point it at the raw PDF reports for a well, and it extracts the operations table, NPT (non-productive time) events, weather, and completion data from each one, then rolls all of it up into an executive summary, a depth-vs-time performance chart, an NPT root-cause breakdown, and free-text semantic search across every report — no manual DDR reading required.
