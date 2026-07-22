@@ -40,6 +40,19 @@ DEFAULT_MAX_NODES         = 120
 DEFAULT_INCLUDE_OP_CODES  = True
 
 
+def _report_hour(t: str) -> float:
+    """Hours since 06:00, wrapped to [0, 24). DDR reporting days run
+    06:00 -> 06:00 the next day, not midnight -> midnight, so sorting raw
+    "HH:MM" strings puts early-morning rows (00:00-05:59, the tail end of
+    the overnight shift) before that same report's actual 06:00 start."""
+    try:
+        parts = str(t).strip().split(":")
+        h = int(parts[0]) + int(parts[1]) / 60.0
+    except Exception:
+        h = 0.0
+    return (h - 6.0) % 24.0
+
+
 def _load_corpus(processed_dir: Path) -> "pd.DataFrame":
     if not _PANDAS_OK:
         raise RuntimeError("pandas required")
@@ -53,7 +66,8 @@ def _load_corpus(processed_dir: Path) -> "pd.DataFrame":
     if not frames:
         raise FileNotFoundError(f"No ddr_facts.parquet found under {processed_dir}")
     df = pd.concat(frames, ignore_index=True)
-    df = df.sort_values(["doc_id", "report_date", "start_time"]).reset_index(drop=True)
+    df["_report_hour"] = df["start_time"].apply(_report_hour)
+    df = df.sort_values(["doc_id", "report_date", "_report_hour"]).drop(columns=["_report_hour"]).reset_index(drop=True)
     return df
 
 
