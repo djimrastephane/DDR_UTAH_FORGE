@@ -539,8 +539,82 @@ def _render_tab_engineering(graph_data: dict, enrichment: dict) -> None:
     st.dataframe(nodes_disp, hide_index=True, use_container_width=True, height=400)
 
 
+def _render_tab_by_op_code(ops: pd.DataFrame) -> None:
+    st.markdown(
+        "Hours and NPT by structured operation type, taken directly from the DDR "
+        "Operation Summary tables (`op_code`) — across the **full well**, not filtered "
+        "to the phase selected above."
+    )
+
+    df = ops.copy()
+    code = df["op_code"].astype(str).str.strip()
+    df["op_code_display"] = code.where(code != "", "(unclassified)").map(
+        lambda c: label_op_code(c) if c != "(unclassified)" else c
+    )
+
+    total_by_code = df.groupby("op_code_display")["duration_hr"].sum()
+    npt_by_code   = (
+        df.loc[df["is_npt"]].groupby("op_code_display")["duration_hr"].sum()
+    )
+    count_by_code = df.groupby("op_code_display").size()
+
+    summary = pd.DataFrame({"total_h": total_by_code, "n_ops": count_by_code})
+    summary["npt_h"] = npt_by_code.reindex(summary.index).fillna(0.0)
+    summary["prod_h"] = summary["total_h"] - summary["npt_h"]
+    summary["npt_pct"] = (summary["npt_h"] / summary["total_h"].replace(0, 1) * 100)
+    summary = summary.sort_values("total_h", ascending=False)
+
+    if "(unclassified)" in summary.index:
+        unclassified_pct = 100 * summary.loc["(unclassified)", "total_h"] / summary["total_h"].sum()
+        if unclassified_pct >= 5:
+            st.caption(
+                f"⚠ {unclassified_pct:.0f}% of well time has no structured operation type "
+                "in the source DDRs (shown as \"(unclassified)\")."
+            )
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        y=summary.index, x=summary["prod_h"], name="Productive",
+        orientation="h", marker_color="#4CAF50", opacity=0.85,
+    ))
+    fig.add_trace(go.Bar(
+        y=summary.index, x=summary["npt_h"], name="NPT",
+        orientation="h", marker_color="#F44336", opacity=0.85,
+    ))
+    fig.update_layout(
+        barmode="stack", height=max(320, len(summary) * 32 + 80),
+        margin=dict(l=10, r=10, t=30, b=10),
+        xaxis_title="Hours", title="Hours by Operation Type",
+        legend=dict(orientation="h", y=-0.15),
+        plot_bgcolor="#FAFAFA", paper_bgcolor="#FAFAFA",
+    )
+    st.plotly_chart(_apply_chart_theme(fig), use_container_width=True)
+
+    disp = summary.reset_index().rename(columns={
+        "op_code_display": "Operation Type",
+        "total_h": "Total h", "npt_h": "NPT h",
+        "npt_pct": "NPT %", "n_ops": "Count",
+    })[["Operation Type", "Total h", "NPT h", "NPT %", "Count"]]
+    disp["Total h"] = disp["Total h"].map("{:.0f}h".format)
+    disp["NPT h"]   = disp["NPT h"].map("{:.0f}h".format)
+    disp["NPT %"]   = disp["NPT %"].map("{:.0f}%".format)
+    st.caption("Ranked by total hours")
+    st.dataframe(disp, hide_index=True, use_container_width=True)
+
+
 def page_operational_graph(ops: pd.DataFrame) -> None:
     st.header("Operational Analysis")
+
+    st.subheader("By Operation Type — full well")
+    _render_tab_by_op_code(ops)
+    st.divider()
+
+    st.subheader("Text-mined workflow patterns — by phase")
+    st.caption(
+        "The sections below infer workflow patterns from operation *text* rather than "
+        "the structured op_code field above — useful for the ~10% of rows with no "
+        "structured operation type, but treat as exploratory, not authoritative."
+    )
 
     phases = sorted(
         ops["phase"].dropna().unique(),
