@@ -11,10 +11,12 @@ import streamlit as st
 
 try:
     from .constants import repo_root, PROCESSED_DIR, GRAPHS_DIR, FIELD_DIR
+    from .utils import _report_hour
 except ImportError:
     # Fallback for environments where app/ui is inserted directly into sys.path
     # (e.g. the verification command: python3 -c "import sys; sys.path.insert(0,'app/ui'); ...")
     from constants import repo_root, PROCESSED_DIR, GRAPHS_DIR, FIELD_DIR  # type: ignore[no-redef]
+    from utils import _report_hour  # type: ignore[no-redef]
 
 # Ensure src/ is on the path (constants already inserts it, but this module
 # may be imported independently in test environments).
@@ -81,7 +83,12 @@ def load_all_ops() -> pd.DataFrame:
     df["npt_category"]       = classify_ops_df(df)
     df["npt_cat_label"]      = df["npt_category"].map(CATEGORY_LABELS).fillna("")
     df.loc[~df["is_npt"], "npt_cat_label"] = ""
-    return df.sort_values(["report_date_parsed", "start_time"]).reset_index(drop=True)
+    # Sort by hours-since-06:00, not raw "HH:MM" — DDR reporting days run
+    # 06:00 -> 06:00 next day, so a plain string sort would put a report's
+    # early-morning tail-end rows (00:00-05:59) before its actual 06:00 start.
+    df["_report_hour"] = df["start_time"].apply(_report_hour)
+    df = df.sort_values(["report_date_parsed", "_report_hour"]).drop(columns=["_report_hour"])
+    return df.reset_index(drop=True)
 
 
 @st.cache_data(show_spinner=False)
@@ -324,7 +331,9 @@ def load_field_ops() -> pd.DataFrame:
     df["npt_category"]       = classify_ops_df(df)
     df["npt_cat_label"]      = df["npt_category"].map(CATEGORY_LABELS).fillna("")
     df.loc[~df["is_npt"], "npt_cat_label"] = ""
-    return df.sort_values(["well_id", "report_date_parsed", "start_time"]).reset_index(drop=True)
+    df["_report_hour"] = df["start_time"].apply(_report_hour)
+    df = df.sort_values(["well_id", "report_date_parsed", "_report_hour"]).drop(columns=["_report_hour"])
+    return df.reset_index(drop=True)
 
 
 @st.cache_data(show_spinner=False)

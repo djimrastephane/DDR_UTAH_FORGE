@@ -11,13 +11,15 @@ try:
     from .constants import PHASE_ORDER, PHASE_COLOURS, PROCESSED_DIR
     from .loaders import load_personnel, generate_well_narrative
     from .utils import (
-        _apply_chart_theme, _sea_state, _beaufort_colour, _phase_date_ranges, _t2h,
+        _apply_chart_theme, _sea_state, _beaufort_colour, _phase_date_ranges,
+        _report_hour,
     )
 except ImportError:
     from constants import PHASE_ORDER, PHASE_COLOURS, PROCESSED_DIR         # type: ignore[no-redef]
     from loaders import load_personnel, generate_well_narrative              # type: ignore[no-redef]
     from utils import (                                                      # type: ignore[no-redef]
-        _apply_chart_theme, _sea_state, _beaufort_colour, _phase_date_ranges, _t2h,
+        _apply_chart_theme, _sea_state, _beaufort_colour, _phase_date_ranges,
+        _report_hour,
     )
 
 _ui_root = Path(__file__).resolve().parents[3]
@@ -35,17 +37,29 @@ def build_npt_interval_chart(day_ops: pd.DataFrame, date_label: str) -> "go.Figu
                            showarrow=False, font=dict(size=13))
         return fig
 
+    # DDR reporting days run 06:00 -> 06:00 the next day, not midnight ->
+    # midnight, so the chart's hour-0 is 06:00 rather than the literal clock
+    # midnight. Without this, every chart wasted its first ~6 hours of width
+    # on empty space (nothing is ever logged before 06:00) and duplicated
+    # "06:00"/"00:00" tick labels at both ends.
+    #
+    # day_ops also isn't guaranteed to arrive in true chronological order for
+    # a 06:00->06:00 window — re-sort here rather than trust the caller, since
+    # a raw string/hour sort on start_time puts a report's early-morning
+    # tail-end rows (00:00-05:59) before its actual 06:00 start.
+    rows = day_ops.copy()
+    rows["_sort_h"] = rows["start_time"].apply(_report_hour)
+    rows = rows.sort_values("_sort_h").drop(columns=["_sort_h"]).reset_index(drop=True)
+
     # Only add 24 when adjusted_start is >12h behind adjusted_prev_end
     # (genuine midnight rollover, not re-triggering on each op).
-    rows = day_ops.reset_index(drop=True).copy()
-
     starts, ends, labels = [], [], []
     adj_prev_end = 0.0
     offset       = 0.0
 
     for _, r in rows.iterrows():
-        sh = _t2h(str(r.get("start_time", "00:00")))
-        eh = _t2h(str(r.get("end_time",   "00:00")))
+        sh = _report_hour(str(r.get("start_time", "06:00")))
+        eh = _report_hour(str(r.get("end_time",   "06:00")))
 
         sh_adj = sh + offset
         # If adjusted start is >12h behind previous adjusted end → midnight crossed
@@ -72,7 +86,7 @@ def build_npt_interval_chart(day_ops: pd.DataFrame, date_label: str) -> "go.Figu
     rows["_label"]   = labels
     rows["_row"]     = range(len(rows))   # y-axis position
 
-    x_max = max(30.0, float(rows["_end_h"].max()) + 0.5)
+    x_max = max(24.0, float(rows["_end_h"].max()) + 0.5)
 
     fig = go.Figure()
 
@@ -117,10 +131,10 @@ def build_npt_interval_chart(day_ops: pd.DataFrame, date_label: str) -> "go.Figu
         margin=dict(l=10, r=10, t=40, b=40),
         title=dict(text=f"Operations — {date_label}", font=dict(size=13)),
         xaxis=dict(
-            title="Hour of day",
+            title="Time (report day runs 06:00 -> 06:00 next day)",
             range=[0, x_max],
             tickvals=list(range(0, int(x_max) + 1, 3)),
-            ticktext=[f"{h % 24:02d}:00" for h in range(0, int(x_max) + 1, 3)],
+            ticktext=[f"{(h + 6) % 24:02d}:00" for h in range(0, int(x_max) + 1, 3)],
         ),
         yaxis=dict(
             tickvals=list(range(len(rows))),
@@ -132,8 +146,8 @@ def build_npt_interval_chart(day_ops: pd.DataFrame, date_label: str) -> "go.Figu
         paper_bgcolor="#FAFAFA",
     )
 
-    if x_max > 24:
-        fig.add_vline(x=24, line_dash="dash", line_color="#999",
+    if x_max >= 18:
+        fig.add_vline(x=18, line_dash="dash", line_color="#999",
                       annotation_text="Midnight", annotation_position="top",
                       annotation_font=dict(size=9, color="#999"))
 

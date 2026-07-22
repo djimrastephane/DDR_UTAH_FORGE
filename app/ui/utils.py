@@ -110,3 +110,14 @@ def _t2h(t: str) -> float:
         return int(parts[0]) + int(parts[1]) / 60.0
     except Exception:
         return 0.0
+
+
+def _report_hour(t: str) -> float:
+    """Hours since 06:00, wrapped to [0, 24). DDR reporting days run
+    06:00 -> 06:00 the next day, not midnight -> midnight, so sorting or
+    comparing raw "HH:MM" strings/hours puts early-morning entries
+    (00:00-05:59, which are chronologically LATE in the report — the tail
+    end of the overnight shift) before that same report's actual 06:00
+    start. Use this instead of _t2h() wherever chronological order within
+    a reporting day matters (sorting operation rows, building a timeline)."""
+    return (_t2h(t) - 6.0) % 24.0

@@ -11,11 +11,11 @@ import streamlit as st
 try:
     from .constants import PHASE_ORDER, PHASE_COLOURS, repo_root
     from .loaders import load_all_ops, load_all_headers, _parse_num, _parse_report_dates
-    from .utils import _apply_chart_theme, _phase_date_ranges
+    from .utils import _apply_chart_theme, _phase_date_ranges, _report_hour
 except ImportError:
     from constants import PHASE_ORDER, PHASE_COLOURS, repo_root  # type: ignore[no-redef]
     from loaders import load_all_ops, load_all_headers, _parse_num, _parse_report_dates  # type: ignore[no-redef]
-    from utils import _apply_chart_theme, _phase_date_ranges  # type: ignore[no-redef]
+    from utils import _apply_chart_theme, _phase_date_ranges, _report_hour  # type: ignore[no-redef]
 
 _root = Path(__file__).resolve().parents[3]
 if str(_root / "src") not in sys.path:
@@ -71,7 +71,12 @@ def _first_sentence(text: str, max_chars: int = 180) -> str:
 
 
 def _build_blocks(ops: pd.DataFrame) -> pd.DataFrame:
-    ops = ops.sort_values(["dt", "start_time"]).reset_index(drop=True)
+    # Sort by hours-since-06:00, not raw "HH:MM" — DDR reporting days run
+    # 06:00 -> 06:00 next day, so a plain string sort would put a report's
+    # early-morning tail-end rows (00:00-05:59) before its actual 06:00 start.
+    ops = ops.copy()
+    ops["_report_hour"] = ops["start_time"].apply(_report_hour)
+    ops = ops.sort_values(["dt", "_report_hour"]).drop(columns=["_report_hour"]).reset_index(drop=True)
 
     # New step when phase, op_code OR date changes — daily boundaries ensure
     # frac stages, cement jobs and multi-day campaigns appear as individual steps.
