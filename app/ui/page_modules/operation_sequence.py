@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import streamlit as st
 
 try:
@@ -350,6 +351,25 @@ def _render_programme_table(blocks: pd.DataFrame, ops: pd.DataFrame) -> None:
 
 
 
+def _label_flat_section(d0: pd.Timestamp, d1: pd.Timestamp, ops: pd.DataFrame, mean_npt_pct: float) -> str:
+    """Short callout label for a multi-day no-depth-gain section on the chart."""
+    sect_ops = ops[(ops["dt"] >= d0) & (ops["dt"] <= d1)]
+    if mean_npt_pct > 50:
+        npt_rows = sect_ops[sect_ops["is_npt"]]
+        cat = (
+            npt_rows.groupby("npt_category")["duration_hr"].sum().idxmax()
+            if not npt_rows.empty else ""
+        )
+        return f"NPT — {CATEGORY_LABELS.get(cat, cat)}" if cat else "NPT event"
+    dominant = str(
+        sect_ops.groupby("op_code")["duration_hr"].sum().idxmax()
+        if not sect_ops.empty and not sect_ops["op_code"].isna().all() else ""
+    ).strip()
+    if dominant in _EXPECTED_FLAT_OP_CODES or dominant in _OPERATIONAL_FLAT_OP_CODES:
+        return label_op_code(dominant) or dominant
+    return "No depth gain — needs review"
+
+
 def _render_well_performance(
     ops: pd.DataFrame,
     hdr: pd.DataFrame,
@@ -359,7 +379,7 @@ def _render_well_performance(
     st.caption(
         "Steep slope = fast drilling progress.  "
         "Flat sections = no depth gained (NPT or waiting).  "
-        "Red shading = days with >50% NPT."
+        "Red shading + red markers = days with >50% NPT."
     )
 
     hdr2 = hdr.copy()
@@ -372,58 +392,141 @@ def _render_well_performance(
 
     daily_npt = _compute_daily_npt(ops)
 
-    fig = go.Figure()
+    # Flat-time reconciliation is computed up front (not just displayed below
+    # the chart) so the biggest no-depth-gain sections can be called out as
+    # annotations directly on the chart.
+    df_m = depth_df.merge(daily_npt[["dt", "npt_pct"]], on="dt", how="left")
+    df_m["depth_delta"] = df_m["depth_ft"].diff().abs()
+    flat = df_m[(df_m["depth_delta"] < 1) & (df_m.index > 0)].copy()
 
+    flat_sections: list[tuple[int, pd.Timestamp, pd.Timestamp, float, str]] = []
+    if not flat.empty:
+        flat_sorted = flat.sort_values("dt").reset_index(drop=True)
+        run_id = (flat_sorted["dt"].diff() > pd.Timedelta(days=1)).cumsum()
+        for _, g in flat_sorted.groupby(run_id):
+            d0, d1 = g["dt"].min(), g["dt"].max()
+            n_days = (d1 - d0).days + 1
+            if n_days < 2:
+                continue  # skip single-day blips — not worth a callout
+            mean_npt = g["npt_pct"].mean()
+            mean_depth = g["depth_ft"].mean()
+            label = _label_flat_section(d0, d1, ops, mean_npt)
+            flat_sections.append((n_days, d0, d1, mean_depth, label))
+        flat_sections.sort(key=lambda s: -s[0])
+
+    fig = make_subplots(
+        rows=2, cols=1, shared_xaxes=True,
+        row_heights=[0.14, 0.86], vertical_spacing=0.03,
+    )
+
+    # Phase timeline strip (row 1): a solid colored bar per phase, with the
+    # phase name shown inline only when the phase is long enough to fit it
+    # without overlapping its neighbours; short phases still expose their
+    # name and date range on hover.
     phase_ranges = _phase_date_ranges(ops)
-    y_top = depth_df["depth_ft"].max() * 0.015
     for ph, (d0, d1) in phase_ranges.items():
         col = PHASE_COLOURS.get(ph, "#9E9E9E")
-        fig.add_vrect(x0=d0, x1=d1, fillcolor=col, opacity=0.06, line_width=0)
-        fig.add_annotation(
-            x=d0 + (d1 - d0) / 2, y=y_top,
-            text=label_phase(ph), showarrow=False,
-            font=dict(size=9, color=col), yanchor="bottom",
+        dur_days = (d1 - d0).days + 1
+        width_ms = (d1 - d0).total_seconds() * 1000
+        mid = d0 + (d1 - d0) / 2
+        fig.add_trace(
+            go.Bar(
+                x=[mid], y=[1], width=[width_ms],
+                marker=dict(color=col, line=dict(width=0)),
+                text=[label_phase(ph)] if dur_days >= 10 else [""],
+                textposition="inside", insidetextanchor="middle",
+                textfont=dict(size=10, color="white"),
+                constraintext="both",
+                hovertext=f"{label_phase(ph)}<br>{d0:%d %b %Y} – {d1:%d %b %Y}",
+                hoverinfo="text",
+                showlegend=False,
+            ),
+            row=1, col=1,
+        )
+        fig.add_vrect(
+            x0=d0, x1=d1, fillcolor=col, opacity=0.06, line_width=0,
+            row=2, col=1,
         )
 
-    for d in daily_npt.loc[daily_npt["npt_pct"] > 50, "dt"]:
+    npt_flag_days = daily_npt.loc[daily_npt["npt_pct"] > 50, "dt"]
+    for d in npt_flag_days:
         fig.add_vrect(
             x0=d - pd.Timedelta(hours=12),
             x1=d + pd.Timedelta(hours=12),
-            fillcolor="#D32F2F", opacity=0.10, line_width=0,
+            fillcolor="#D32F2F", opacity=0.16, line_width=0,
+            row=2, col=1,
         )
 
-    fig.add_trace(go.Scatter(
-        x=depth_df["dt"], y=depth_df["depth_ft"],
-        mode="lines", line=dict(color="#1565C0", width=2.5),
-        name="Actual depth",
-        hovertemplate="<b>%{x|%d %b %Y}</b><br>Depth: %{y:,.0f} ft MD<extra></extra>",
-    ))
+    fig.add_trace(
+        go.Scatter(
+            x=depth_df["dt"], y=depth_df["depth_ft"],
+            mode="lines", line=dict(color="#1565C0", width=2.5),
+            name="Actual depth",
+            hovertemplate="<b>%{x|%d %b %Y}</b><br>Depth: %{y:,.0f} ft MD<extra></extra>",
+        ),
+        row=2, col=1,
+    )
 
-    fig.add_trace(go.Scatter(
-        x=[depth_df["dt"].iloc[0], depth_df["dt"].iloc[-1]],
-        y=[depth_df["depth_ft"].iloc[0], depth_df["depth_ft"].iloc[-1]],
-        mode="lines",
-        line=dict(color="#9E9E9E", width=1.5, dash="dot"),
-        name="Theoretical (no NPT)",
-        hoverinfo="skip",
-    ))
+    # Explicit markers on the actual-depth days flagged >50% NPT — the red
+    # background shading alone reads as very subtle once other layers are on.
+    flag_pts = depth_df[depth_df["dt"].isin(npt_flag_days)]
+    if not flag_pts.empty:
+        fig.add_trace(
+            go.Scatter(
+                x=flag_pts["dt"], y=flag_pts["depth_ft"],
+                mode="markers",
+                marker=dict(color="#D32F2F", size=9, symbol="diamond",
+                            line=dict(color="white", width=1)),
+                name="NPT >50% day",
+                hovertemplate="<b>%{x|%d %b %Y}</b><br>NPT >50% this day<extra></extra>",
+            ),
+            row=2, col=1,
+        )
 
+    fig.add_trace(
+        go.Scatter(
+            x=[depth_df["dt"].iloc[0], depth_df["dt"].iloc[-1]],
+            y=[depth_df["depth_ft"].iloc[0], depth_df["depth_ft"].iloc[-1]],
+            mode="lines",
+            line=dict(color="#9E9E9E", width=1.5, dash="dot"),
+            name="Linear reference (no-delay estimate)",
+            hoverinfo="skip",
+        ),
+        row=2, col=1,
+    )
+
+    depth_min, depth_max = depth_df["depth_ft"].min(), depth_df["depth_ft"].max()
+    depth_span = max(depth_max - depth_min, 1)
+    for n_days, d0, d1, depth_y, label in flat_sections[:3]:
+        # Points near the shallow (top) edge of the depth axis would push
+        # the callout box up into the phase timeline row above — flip the
+        # arrow to point down instead for those.
+        near_top = (depth_y - depth_min) / depth_span < 0.2
+        fig.add_annotation(
+            x=d0 + (d1 - d0) / 2, y=depth_y,
+            text=f"{label}<br>{n_days}d",
+            showarrow=True, arrowhead=2, arrowcolor="#555",
+            ax=0, ay=40 if near_top else -45,
+            font=dict(size=10, color="#1A202C"),
+            bgcolor="rgba(255,255,255,0.88)", bordercolor="#888", borderwidth=1,
+            row=2, col=1,
+        )
+
+    fig.update_yaxes(visible=False, range=[0, 2], row=1, col=1)
     fig.update_yaxes(
         autorange="reversed", title="Depth (ft MD)",
         tickformat=",", showgrid=True, gridcolor="rgba(175,175,175,0.35)",
+        row=2, col=1,
     )
-    fig.update_xaxes(title="Date", showgrid=False)
+    fig.update_xaxes(showticklabels=False, showgrid=False, row=1, col=1)
+    fig.update_xaxes(title="Date", showgrid=False, row=2, col=1)
     fig.update_layout(
-        height=550, plot_bgcolor="white",
-        legend=dict(orientation="h", y=1.04),
-        margin=dict(l=10, r=10, t=40, b=20),
+        height=700, plot_bgcolor="white", bargap=0,
+        legend=dict(orientation="h", y=1.09),
+        margin=dict(l=10, r=10, t=50, b=20),
     )
     _apply_chart_theme(fig)
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
-    df_m = depth_df.merge(daily_npt[["dt","npt_pct"]], on="dt", how="left")
-    df_m["depth_delta"] = df_m["depth_ft"].diff().abs()
-    flat  = df_m[(df_m["depth_delta"] < 1) & (df_m.index > 0)]
 
     st.markdown("**Flat Time Reconciliation**")
     st.caption(
@@ -443,7 +546,10 @@ def _render_well_performance(
 
     r1, r2, r3, r4 = st.columns(4)
     r1.metric("Days with no depth gain", len(flat))
-    r2.metric("Confirmed NPT", len(confirmed_npt))
+    r2.metric("Flat-time NPT", len(confirmed_npt),
+              help="Days with no depth gain where daily NPT exceeds 50% — a day count, "
+                   "not hours. Distinct from the total programme NPT hours shown at the "
+                   "top of this page.")
     r3.metric("Expected / operational support", n_expected + n_operational,
               help=f"{n_expected} expected non-drilling (casing/cement/logging/BOP/rig move) "
                    f"+ {n_operational} operational support (trips/circulating/conditioning/surveys)")
@@ -454,7 +560,13 @@ def _render_well_performance(
 
     review_days = flat_other[flat_other["bucket"] == "Unclassified — needs review"]
     if not review_days.empty:
-        with st.expander(f"Days needing review ({len(review_days)})"):
+        review_dates = sorted(review_days["dt"])
+        label = (
+            f"Days needing review — {', '.join(d.strftime('%d %b %Y') for d in review_dates)}"
+            if len(review_dates) <= 5
+            else f"Days needing review ({len(review_dates)})"
+        )
+        with st.expander(label, expanded=True):
             rows = []
             for d in review_days["dt"]:
                 day_ops = ops[ops["dt"] == d]
