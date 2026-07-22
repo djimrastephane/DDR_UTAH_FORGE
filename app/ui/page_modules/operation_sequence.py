@@ -323,11 +323,23 @@ def _render_programme_table(blocks: pd.DataFrame, ops: pd.DataFrame) -> None:
         "Description":    view["description"].map(_first_sentence),
     })
 
-    # Plain values only (no pandas Styler) — a Styler + this many filter
-    # widgets on one page reproducibly crashed with a React error on
-    # rerun; the status icon column carries the same red/amber/white
-    # signal without it.
-    st.dataframe(disp, hide_index=True, height=560)
+    # The reproducible crash on this page's widget reruns was bisected to
+    # use_container_width=True specifically, not to pandas Styler — so a
+    # Styler is safe here as long as that stays off. Row-tint the same
+    # red/amber signal as the Status column so NPT rows are visible at a
+    # glance, not just via the emoji.
+    npt_pct_by_row = view["npt_pct"].reset_index(drop=True)
+
+    def _row_style(row: pd.Series) -> list[str]:
+        pct = npt_pct_by_row.iloc[row.name]
+        if pct > 50:
+            return ["background-color: #FDECEA"] * len(row)
+        if pct >= 25:
+            return ["background-color: #FFF8E1"] * len(row)
+        return [""] * len(row)
+
+    styled = disp.reset_index(drop=True).style.apply(_row_style, axis=1)
+    st.dataframe(styled, hide_index=True, height=560)
 
     st.download_button(
         "⬇ Download programme CSV",
