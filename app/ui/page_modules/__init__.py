@@ -16,4 +16,5 @@ Available page modules (added as the refactor progresses):
 - ``page_modules.operations_log``     — filterable operations log with CSV export
 - ``page_modules.campaign_summary``   — cross-well comparison and field analytics
 - ``page_modules.lessons_learned``    — auto-generated NPT summary and recommendations
+- ``page_modules.root_cause_tracker`` — engineer-entered root cause/action log per NPT event
 """

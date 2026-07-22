@@ -26,6 +26,7 @@ from page_modules.upload_ddrs       import page_upload_ddrs
 from page_modules.operations_log    import page_operations_log
 from page_modules.operational_graph import page_operational_graph
 from page_modules.lessons_learned   import page_lessons_learned
+from page_modules.root_cause_tracker import page_root_cause_tracker
 from page_modules.corpus_search     import page_corpus_search
 
 
@@ -37,6 +38,7 @@ _ENG_PAGES = [
     "🔄 Operation Sequence",
     "🕸 Operational Graph",
     "📝 Lessons Learned",
+    "🔧 Root Cause & Actions",
     "📋 Operations Log",
     "📥 Upload DDRs",
 ]
@@ -126,6 +128,8 @@ def main() -> None:
         page_npt_intelligence(ops)
     elif page == "📝 Lessons Learned":
         page_lessons_learned(ops, load_wellbore_events())
+    elif page == "🔧 Root Cause & Actions":
+        page_root_cause_tracker(ops)
     elif page == "📋 Operations Log":
         page_operations_log(ops)
 
