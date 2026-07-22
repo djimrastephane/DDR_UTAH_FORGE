@@ -180,7 +180,7 @@ def _render_phase_performance(ops: pd.DataFrame) -> None:
         margin=dict(l=50, r=20, t=10, b=60),
     )
     _apply_chart_theme(fig)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
 def _render_risk_summary(ops: pd.DataFrame, events: pd.DataFrame,
@@ -380,7 +380,7 @@ def _render_cross_well(field_ops: pd.DataFrame, field_hdr: pd.DataFrame,
             margin=dict(l=50, r=20, t=10, b=60),
         )
         _apply_chart_theme(fig_cw)
-        st.plotly_chart(fig_cw, use_container_width=True)
+        st.plotly_chart(fig_cw, use_container_width=True, config={"displayModeBar": False})
 
     with col_insight:
         st.markdown("**Recurring vs resolved NPT challenges**")

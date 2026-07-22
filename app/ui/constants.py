@@ -13,6 +13,17 @@ PROCESSED_DIR: Path = repo_root / "data" / "processed"
 GRAPHS_DIR: Path = repo_root / "data" / "graphs"
 FIELD_DIR: Path = repo_root / "data" / "fields" / "UtahForge"
 
+# Shared semantic colour convention for new charts: red = NPT/lost time,
+# green = productive, amber = warning/needs review, blue = planned/support.
+# Most existing charts already use red/green consistently; this is the
+# reference palette for anything new rather than a retrofit of every chart.
+STATUS_COLOURS: dict[str, str] = {
+    "npt":        "#EF5350",
+    "productive": "#4CAF50",
+    "warning":    "#FFA000",
+    "support":    "#1976D2",
+}
+
 PHASE_ORDER: list[str] = [
     "No Activity",
     "Rig Move In",

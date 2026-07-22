@@ -22,7 +22,10 @@ if str(_root / "src") not in sys.path:
     sys.path.insert(0, str(_root / "src"))
 
 from ddr_rag.vocab import label_phase, label_op_code
-from ddr_rag.npt_classifier import apply_corpus_npt_rules, classify_ops_df, CATEGORY_LABELS, CATEGORY_COLOURS
+from ddr_rag.npt_classifier import (
+    apply_corpus_npt_rules, classify_ops_df, classify_equipment_subtype,
+    CATEGORY_LABELS, CATEGORY_COLOURS,
+)
 
 # Operation types that structurally produce no depth gain and are a normal
 # part of a drilling programme (casing, cementing, logging, pressure tests,
@@ -205,6 +208,21 @@ def page_operation_sequence() -> None:
 
 
 
+def _root_cause_key(row: pd.Series) -> str:
+    """Grouping key used to flag steps that share a repeated root cause.
+    Drills into the equipment sub-type (Phase 1's classifier) when the
+    dominant NPT category is "equipment"; falls back to the category
+    itself otherwise."""
+    cat = str(row.get("npt_category") or "").strip()
+    if not cat:
+        return ""
+    if cat == "equipment":
+        subtype = classify_equipment_subtype(str(row.get("description") or ""))
+        if subtype != "Unspecified":
+            return f"equipment:{subtype}"
+    return cat
+
+
 def _render_programme_table(blocks: pd.DataFrame, ops: pd.DataFrame) -> None:
     fc1, fc2 = st.columns([2, 2])
     with fc1:
@@ -221,89 +239,94 @@ def _render_programme_table(blocks: pd.DataFrame, ops: pd.DataFrame) -> None:
             help="Set to 50 to show only high-NPT steps",
         )
 
+    fc3, fc4, fc5, fc6 = st.columns(4)
+    with fc3:
+        op_opts = sorted({c for c in blocks["op_code"].astype(str).str.strip() if c})
+        sel_ops = st.multiselect(
+            "Operation type", op_opts, format_func=lambda c: label_op_code(c) or c
+        )
+    with fc5:
+        min_dur = st.number_input("Min step duration (h)", min_value=0.0, value=0.0, step=1.0)
+    with fc6:
+        exceptions_only = st.checkbox(
+            "Exception rows only", value=False, help="Only steps with NPT hours > 0"
+        )
+    with fc4:
+        cat_opts = sorted({c for c in blocks["npt_category"].astype(str).str.strip() if c})
+        sel_cats = st.multiselect(
+            "NPT category", cat_opts, format_func=lambda c: CATEGORY_LABELS.get(c, c)
+        )
+
+    min_d, max_d = blocks["start_dt"].min().date(), blocks["end_dt"].max().date()
+    date_range = st.date_input(
+        "Date range", value=(min_d, max_d), min_value=min_d, max_value=max_d,
+    )
+
     view = blocks.copy()
     if sel_phase != "All":
         view = view[view["phase"] == sel_phase]
     if min_npt > 0:
         view = view[view["npt_pct"] >= min_npt]
+    if sel_ops:
+        view = view[view["op_code"].isin(sel_ops)]
+    if sel_cats:
+        view = view[view["npt_category"].isin(sel_cats)]
+    if min_dur > 0:
+        view = view[view["total_h"] >= min_dur]
+    if exceptions_only:
+        view = view[view["npt_h"] > 0]
+    if isinstance(date_range, tuple) and len(date_range) == 2:
+        d0, d1 = date_range
+        view = view[(view["start_dt"].dt.date <= d1) & (view["end_dt"].dt.date >= d0)]
 
     if view.empty:
         st.info("No steps match the selected filters.")
         return
 
-    st.caption(f"Showing {len(view)} of {len(blocks)} steps  ·  "
-               f"🔴 red = NPT>50%  ·  🟡 amber = NPT 25-50%  ·  ⬜ white = on-programme")
-
-    row_fill, font_col = [], []
-    for _, r in view.iterrows():
-        if r["npt_pct"] > 50:
-            row_fill.append("#FFCDD2"); font_col.append("#B71C1C")
-        elif r["npt_pct"] >= 25:
-            row_fill.append("#FFF9C4"); font_col.append("#5D4037")
-        else:
-            row_fill.append("white");   font_col.append("#1A202C")
-
-    steps       = view["step"].tolist()
-    phases      = [label_phase(p) for p in view["phase"]]
-    op_types    = [label_op_code(c) or c for c in view["op_code"]]
-    start_dates = view["start_dt"].dt.strftime("%d %b %Y").tolist()
-    end_dates   = view["end_dt"].dt.strftime("%d %b %Y").tolist()
-    durations   = [f"{h:.0f}h" for h in view["total_h"]]
-    npt_hrs     = [f"{h:.0f}h" for h in view["npt_h"]]
-    npt_pcts    = [f"{p:.0f}%" for p in view["npt_pct"]]
-    descs       = [_first_sentence(d) for d in view["description"]]
-    npt_cats    = [
-        CATEGORY_LABELS.get(c, "—") if c else "—"
-        for c in view["npt_category"]
-    ]
-
-    n_cols = 10
-    fig = go.Figure(go.Table(
-        columnwidth=[4, 11, 11, 8, 8, 7, 7, 6, 12, 26],
-        header=dict(
-            values=[
-                "<b>Step</b>", "<b>Phase</b>", "<b>Operation Type</b>",
-                "<b>Start</b>", "<b>End</b>",
-                "<b>Duration</b>", "<b>NPT</b>", "<b>NPT%</b>",
-                "<b>NPT Category</b>", "<b>Description</b>",
-            ],
-            fill_color="#1565C0",
-            font=dict(color="white", size=11),
-            align="left",
-            height=30,
-        ),
-        cells=dict(
-            values=[
-                steps, phases, op_types,
-                start_dates, end_dates,
-                durations, npt_hrs, npt_pcts,
-                npt_cats, descs,
-            ],
-            fill_color=[row_fill] * n_cols,
-            font=dict(color=[font_col] * n_cols, size=10.5),
-            align=["center","left","left","center","center",
-                   "center","center","center","left","left"],
-            height=26,
-        ),
-    ))
-    fig.update_layout(
-        margin=dict(l=0, r=0, t=10, b=0),
-        height=max(400, len(view) * 28 + 80),
+    view = view.copy()
+    view["_root_cause"] = view.apply(_root_cause_key, axis=1)
+    repeat_counts = view["_root_cause"].value_counts()
+    view["repeat"] = view["_root_cause"].map(
+        lambda k: "🔁" if k and repeat_counts.get(k, 0) >= 2 else ""
     )
-    st.plotly_chart(fig, use_container_width=True)
 
-    csv_df = pd.DataFrame({
-        "Step": steps, "Phase": phases, "Operation Type": op_types,
-        "Start Date": start_dates, "End Date": end_dates,
-        "Duration (h)": view["total_h"].values,
-        "NPT (h)": view["npt_h"].values,
-        "NPT%": view["npt_pct"].round(1).values,
-        "NPT Category": npt_cats,
-        "Description": descs,
+    st.caption(
+        f"Showing {len(view)} of {len(blocks)} steps  ·  "
+        f"🔴 red = NPT>50%  ·  🟡 amber = NPT 25-50%  ·  ⬜ white = on-programme  ·  "
+        f"🔁 = repeated root cause within this view"
+    )
+
+    def _status_icon(npt_pct: float) -> str:
+        if npt_pct > 50:
+            return "🔴"
+        if npt_pct >= 25:
+            return "🟡"
+        return "⬜"
+
+    disp = pd.DataFrame({
+        "Status":         view["npt_pct"].map(_status_icon),
+        "Step":           view["step"],
+        "Repeat":         view["repeat"],
+        "Phase":          view["phase"].map(label_phase),
+        "Operation Type": view["op_code"].map(lambda c: label_op_code(c) or c),
+        "Start":          view["start_dt"].dt.strftime("%d %b %Y"),
+        "End":            view["end_dt"].dt.strftime("%d %b %Y"),
+        "Duration (h)":   view["total_h"].round(0).astype(int),
+        "NPT (h)":        view["npt_h"].round(0).astype(int),
+        "NPT%":           view["npt_pct"].round(0).astype(int).astype(str) + "%",
+        "NPT Category":   view["npt_category"].map(lambda c: CATEGORY_LABELS.get(c, "—") if c else "—"),
+        "Description":    view["description"].map(_first_sentence),
     })
+
+    # Plain values only (no pandas Styler) — a Styler + this many filter
+    # widgets on one page reproducibly crashed with a React error on
+    # rerun; the status icon column carries the same red/amber/white
+    # signal without it.
+    st.dataframe(disp, hide_index=True, height=560)
+
     st.download_button(
         "⬇ Download programme CSV",
-        data=csv_df.to_csv(index=False),
+        data=disp.to_csv(index=False),
         file_name="operation_sequence.csv",
         mime="text/csv",
     )
@@ -379,7 +402,7 @@ def _render_well_performance(
         margin=dict(l=10, r=10, t=40, b=20),
     )
     _apply_chart_theme(fig)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
     df_m = depth_df.merge(daily_npt[["dt","npt_pct"]], on="dt", how="left")
     df_m["depth_delta"] = df_m["depth_ft"].diff().abs()
@@ -630,5 +653,5 @@ def _render_improvement_analysis(
                 align="left", height=24),
         ))
         fig_s.update_layout(margin=dict(l=0,r=0,t=5,b=0), height=220)
-        st.plotly_chart(fig_s, use_container_width=True)
+        st.plotly_chart(fig_s, use_container_width=True, config={"displayModeBar": False})
         st.caption("Benchmark: 1–3% per phase. Higher values suggest frequent operation changes requiring re-briefing.")

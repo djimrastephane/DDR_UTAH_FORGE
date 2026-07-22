@@ -194,7 +194,7 @@ def _render_npt_phase_bar(ops: pd.DataFrame) -> None:
                           xaxis_title="Hours", title="Hours by Phase",
                           legend=dict(orientation="h", y=-0.3),
                           plot_bgcolor="#FAFAFA", paper_bgcolor="#FAFAFA")
-        st.plotly_chart(_apply_chart_theme(fig), use_container_width=True)
+        st.plotly_chart(_apply_chart_theme(fig), use_container_width=True, config={"displayModeBar": False})
 
     with right:
         ps_d = ps[["Phase","total","npt","npt_pct"]].sort_values(
@@ -335,7 +335,7 @@ def _render_npt_trajectory(ops: pd.DataFrame, planned_time: pd.DataFrame) -> Non
         plot_bgcolor="#FAFAFA", paper_bgcolor="#FAFAFA",
         showlegend=False,
     )
-    st.plotly_chart(_apply_chart_theme(fig_pt), use_container_width=True)
+    st.plotly_chart(_apply_chart_theme(fig_pt), use_container_width=True, config={"displayModeBar": False})
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Best efficiency",
@@ -470,7 +470,7 @@ def _render_daily_cost(ops: pd.DataFrame, hdr: pd.DataFrame) -> None:
         yaxis=dict(title="£k / day", type=_y_type),
         plot_bgcolor="#FAFAFA", paper_bgcolor="#FAFAFA",
     )
-    st.plotly_chart(_apply_chart_theme(fig2), use_container_width=True)
+    st.plotly_chart(_apply_chart_theme(fig2), use_container_width=True, config={"displayModeBar": False})
 
     _compzn_dates = _phase_ranges_cost.get("COMPZN")
     if _compzn_dates:
@@ -568,7 +568,7 @@ def _render_depth_chart(ops: pd.DataFrame, hdr: pd.DataFrame) -> None:
         paper_bgcolor="#FAFAFA",
         showlegend=False,
     )
-    st.plotly_chart(_apply_chart_theme(fig), use_container_width=True)
+    st.plotly_chart(_apply_chart_theme(fig), use_container_width=True, config={"displayModeBar": False})
 
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("First Depth Report", first_depth_dt.strftime("%d %b %Y"))
@@ -714,7 +714,7 @@ def _render_weather(ops: pd.DataFrame, weather: pd.DataFrame) -> None:
                     range=[0, 300], showticklabels=False, showgrid=False),
         hovermode="x unified",
     )
-    st.plotly_chart(_apply_chart_theme(fig_wx), use_container_width=True)
+    st.plotly_chart(_apply_chart_theme(fig_wx), use_container_width=True, config={"displayModeBar": False})
 
     phase_wx = (
         w_npt[w_npt["phase"].notna() & (w_npt["phase"] != "")]
@@ -807,7 +807,7 @@ def _render_vessels(vessels: pd.DataFrame) -> None:
         plot_bgcolor="#FAFAFA", paper_bgcolor="#FAFAFA",
         legend=dict(orientation="h", y=-0.3),
     )
-    st.plotly_chart(_apply_chart_theme(fig_v), use_container_width=True)
+    st.plotly_chart(_apply_chart_theme(fig_v), use_container_width=True, config={"displayModeBar": False})
 
     left_v, right_v = st.columns(2)
     with left_v:
@@ -916,7 +916,7 @@ def _render_personnel(ops: pd.DataFrame, hdr: pd.DataFrame) -> None:
             margin=dict(l=50, r=20, t=40, b=40),
         )
         _apply_chart_theme(fig_pob)
-        st.plotly_chart(fig_pob, use_container_width=True)
+        st.plotly_chart(fig_pob, use_container_width=True, config={"displayModeBar": False})
 
     with col_table:
         st.markdown("**Phase POB summary — planning reference**")
@@ -997,7 +997,7 @@ def _render_personnel(ops: pd.DataFrame, hdr: pd.DataFrame) -> None:
             margin=dict(l=50, r=20, t=10, b=100),
         )
         _apply_chart_theme(fig_co)
-        st.plotly_chart(fig_co, use_container_width=True)
+        st.plotly_chart(fig_co, use_container_width=True, config={"displayModeBar": False})
 
 
 def _render_drill_down(ops: pd.DataFrame, hdr: pd.DataFrame,
@@ -1043,7 +1043,7 @@ def _render_drill_down(ops: pd.DataFrame, hdr: pd.DataFrame,
         cc4.metric("Phase",        label_phase(day_ops["phase"].mode()[0]) if not day_ops["phase"].empty else "—")
 
     fig_gantt = build_npt_interval_chart(day_ops, sel_date.strftime("%d %b %Y"))
-    st.plotly_chart(_apply_chart_theme(fig_gantt), use_container_width=True)
+    st.plotly_chart(_apply_chart_theme(fig_gantt), use_container_width=True, config={"displayModeBar": False})
 
     with st.expander("Show operations table", expanded=False):
         show_cols = ["start_time", "end_time", "duration_hr", "op_code_label",

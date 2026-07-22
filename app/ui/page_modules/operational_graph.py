@@ -480,7 +480,7 @@ def _render_tab_focus(graph_data: dict, enrichment: dict) -> None:
         fig = render_graph(graph_data, min_norm_weight=min_nw,
                            mode_key=mode_key, max_labels=max_labels,
                            enrichment=enrichment)
-    st.plotly_chart(_apply_chart_theme(fig), use_container_width=True)
+    st.plotly_chart(_apply_chart_theme(fig), use_container_width=True, config={"displayModeBar": False})
     st.caption(
         "**◆ Diamond** = operation category (structured DDR code). "
         "**● Circle** = operational term from description text. "
@@ -512,7 +512,7 @@ def _render_tab_engineering(graph_data: dict, enrichment: dict) -> None:
         fig_eng = render_graph(graph_data, min_norm_weight=eng_threshold,
                                mode_key="all", max_labels=eng_labels,
                                enrichment=enrichment)
-    st.plotly_chart(_apply_chart_theme(fig_eng), use_container_width=True)
+    st.plotly_chart(_apply_chart_theme(fig_eng), use_container_width=True, config={"displayModeBar": False})
     st.caption(
         "**◆ Diamond** = operation category (structured DDR code). "
         "**● Circle** = operational term from description text. "
@@ -588,7 +588,7 @@ def _render_tab_by_op_code(ops: pd.DataFrame) -> None:
         legend=dict(orientation="h", y=-0.15),
         plot_bgcolor="#FAFAFA", paper_bgcolor="#FAFAFA",
     )
-    st.plotly_chart(_apply_chart_theme(fig), use_container_width=True)
+    st.plotly_chart(_apply_chart_theme(fig), use_container_width=True, config={"displayModeBar": False})
 
     disp = summary.reset_index().rename(columns={
         "op_code_display": "Operation Type",

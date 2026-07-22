@@ -1,0 +1,12 @@
+# Force a light theme so the app shell always matches the charts, which
+# assume a light background (plot_bgcolor="white"/"#FAFAFA" throughout).
+# Without this, a browser/OS set to dark mode makes every chart render as
+# a stark white block against a dark shell. Rebuilding every chart to be
+# dark-mode-aware would be a much larger undertaking touching every page;
+# forcing light is the pragmatic fix for a report-style dashboard like this.
+[theme]
+base = "light"
+primaryColor = "#1565C0"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#FAFAFA"
+textColor = "#1A202C"

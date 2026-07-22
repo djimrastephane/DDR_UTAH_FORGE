@@ -7,8 +7,8 @@ import plotly.graph_objects as go
 
 
 def _apply_chart_theme(fig: go.Figure) -> go.Figure:
-    _TICK  = dict(size=11.5, color="rgb(40,40,40)",  family="Arial, sans-serif")
-    _TITLE = dict(size=12,   color="rgb(20,20,20)",  family="Arial, sans-serif")
+    _TICK  = dict(size=13,   color="rgb(40,40,40)",  family="Arial, sans-serif")
+    _TITLE = dict(size=13.5, color="rgb(20,20,20)",  family="Arial, sans-serif")
     _GRID  = "rgba(175,175,175,0.35)"
     _ZERO  = "rgba(110,110,110,0.55)"
     _LINE  = "rgba(110,110,110,0.40)"
@@ -30,9 +30,9 @@ def _apply_chart_theme(fig: go.Figure) -> go.Figure:
         tickcolor="rgba(80,80,80,0.6)",
     )
     fig.update_layout(
-        font=dict(size=11.5, color="rgb(40,40,40)", family="Arial, sans-serif"),
+        font=dict(size=13, color="rgb(40,40,40)", family="Arial, sans-serif"),
         legend=dict(
-            font=dict(size=11, color="rgb(40,40,40)"),
+            font=dict(size=12.5, color="rgb(40,40,40)"),
             bgcolor="rgba(255,255,255,0.92)",
             bordercolor="rgba(150,150,150,0.35)",
             borderwidth=1,

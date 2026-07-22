@@ -63,7 +63,7 @@ def _render_category_breakdown(npt_ops: pd.DataFrame, npt_h: float) -> None:
         plot_bgcolor="#FAFAFA", paper_bgcolor="#FAFAFA",
         showlegend=False,
     )
-    st.plotly_chart(_apply_chart_theme(fig), use_container_width=True)
+    st.plotly_chart(_apply_chart_theme(fig), use_container_width=True, config={"displayModeBar": False})
 
 
 def _render_findings(phase_ops: pd.DataFrame, npt_ops: pd.DataFrame) -> None:
@@ -203,7 +203,7 @@ def _render_debris_chart(phase: str) -> None:
         legend=dict(orientation="h", y=-0.25),
         plot_bgcolor="#FAFAFA", paper_bgcolor="#FAFAFA",
     )
-    st.plotly_chart(_apply_chart_theme(fig_dm), use_container_width=True)
+    st.plotly_chart(_apply_chart_theme(fig_dm), use_container_width=True, config={"displayModeBar": False})
 
     peak_total  = dm_active["section_total_grams"].max()
     peak_day    = dm_active["daily_grams"].max()
