@@ -1,8 +1,69 @@
 # DDR_UTAH_FORGE
 
-Utah FORGE DDR intelligence project scaffolded from the `DDR_RAG_Pipeline` architecture.
+**Turns a stack of scanned daily drilling reports (DDRs) into a searchable, structured drilling-performance dashboard.**
 
-This repository keeps the same separation of concerns as the reference pipeline:
+Point it at the raw PDF reports for a well, and it extracts the operations table, NPT (non-productive time) events, weather, and completion data from each one, then rolls all of it up into an executive summary, a depth-vs-time performance chart, an NPT root-cause breakdown, and free-text semantic search across every report — no manual DDR reading required.
+
+Built for **Utah FORGE well FORGE-16A-78-32** (Frontier Rig 16, Oct 2020 – Jan 2021, 76 reports). The extraction layer is tuned to this well's specific report template; see [Limitations](#limitations) before trusting it on a different one.
+
+## What it looks like
+
+| Campaign Summary | Well Performance Chart |
+|---|---|
+| ![Campaign Summary](docs/screenshots/campaign_summary.png) | ![Well Performance Chart](docs/screenshots/well_performance_chart.png) |
+
+| NPT Intelligence | Corpus Search |
+|---|---|
+| ![NPT Intelligence](docs/screenshots/npt_intelligence.png) | ![Corpus Search](docs/screenshots/corpus_search.png) |
+
+<details>
+<summary>Operational Graph</summary>
+
+![Operational Graph](docs/screenshots/operational_graph.png)
+</details>
+
+## Architecture
+
+Two layers: a **report-agnostic PDF pipeline** (`src/rag_pdf/`) that turns any scanned PDF into clean text, tables, and a search index, and a **Utah FORGE-specific domain layer** (`src/ddr_rag/`) built on top of it that knows what a DDR looks like and pulls structured drilling facts out of it.
+
+```mermaid
+flowchart TD
+    A["Raw DDR PDFs\ndata/raw/"] --> B["Filename QC\nstable doc IDs, duplicate/format checks"]
+    B --> C["Hybrid PDF preprocessing\ntext extraction + OCR fallback,\nboilerplate strip, table crop"]
+    C --> D["Chunk + embed\nBM25 + dense hybrid index"]
+    C --> E["Domain fact extraction\nheader, ops table, weather,\ncompletion string, frac sleeve, metrics"]
+    E --> F["NPT classification\nrule-based on narrative text"]
+    F --> G["Field / campaign rollup\nrebuild_field_analysis.py"]
+    G --> H["Operational graph & causality\nco-occurrence + phase-transition heuristics"]
+    D --> I["Streamlit dashboard  +  FastAPI"]
+    G --> I
+    H --> I
+```
+
+1. **Filename QC** — validates and normalizes raw PDF filenames into stable document IDs, flagging duplicates and unreadable files.
+2. **Hybrid PDF preprocessing** — per page: extract text (PyMuPDF), fall back to OCR only when extraction is too sparse, strip repeated headers/footers, detect sections, chunk for retrieval, and extract tables via anchor-cropped `pdfplumber`.
+3. **Search index** — chunks are embedded and combined into a corpus-wide BM25 + dense hybrid index (powers Corpus Search).
+4. **Domain fact extraction** — a separate pass that reads each report's text directly and pulls structured facts: header fields, the operations/time table, wellbore events, weather, completion string, frac sleeve status, drilling metrics.
+5. **NPT classification** — regex/keyword rules over the operation narrative assign each flagged row an NPT category (equipment, fishing, wellbore condition, weather, …).
+6. **Field/campaign rollup** — merges every report's facts into the combined artefacts the dashboard reads.
+7. **Operational graph & causality** — a co-occurrence network of operation types plus a phase-transition term-frequency heuristic, surfaced as "carryover"/"escalating" signals.
+8. **Serving** — a Streamlit dashboard (`app/ui/`) reads the rolled-up data; a FastAPI service (`app/api/main.py`) exposes health, search, and upload endpoints for the RAG side.
+
+## Limitations
+
+Everything here is derived from the DDR PDFs themselves — there's no rig sensor feed, no offset-well data, and no drilling plan behind it. That shapes what the numbers can and can't tell you:
+
+- **NPT and its cause are inferred from free-text narrative, not a structured code.** Utah FORGE DDRs don't carry a P-T-X trouble code, so `src/ddr_rag/npt_classifier.py` flags NPT and assigns a cause purely by matching phrases in the operator's write-up (the app says this explicitly on the NPT Intelligence page). Non-standard phrasing can be missed or miscategorized.
+- **Every extractor is pattern-matched against this well's specific report template.** Wellbore events, weather, completion string, frac sleeve status, and drilling metrics are all pulled with regexes tuned to how *this* report writer phrases things. A DDR that's formatted or worded differently will extract worse, or not at all, until a new profile/extractor is added.
+- **No planned-time programme or offset well exists for this campaign.** The "Expected" flat-time classification and the depth chart's "Linear reference" line are structural baselines (op-code driven, or a straight no-delay line), not a comparison to an actual drilling plan — the dashboard is explicit about this wherever it appears.
+- **Table extraction (BHA, mud, survey tables) is the most fragile layer.** These come from scanned, ruling-line-heavy page layouts; an earlier extraction backend silently corrupted numeric values (durations off by 10x) before being replaced with the current anchor-cropped approach. Treat table-derived numbers as more error-prone than header/text fields.
+- **OCR only runs when primary text extraction comes back nearly empty.** A page that extracts as garbled-but-not-empty text is never OCR-corrected.
+- **The operational graph and "causality" signals are frequency heuristics**, not statistically verified causal inference — they flag terms that co-occur or cluster around phase transitions more often than a threshold, nothing more.
+- **Each report is parsed independently.** There's no cross-report reconciliation beyond de-duplicating by report date, so an error in one DDR doesn't get caught against its neighbors.
+
+In short: treat this as **structured intelligence extracted from unstructured, scanned reports for one well** — a major time-saver over reading 76 PDFs by hand, but not a substitute for engineering judgment on any individual number.
+
+## Repository layout
 
 ```text
 app/          Streamlit UI and FastAPI API
