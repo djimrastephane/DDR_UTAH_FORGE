@@ -14,7 +14,7 @@ BASE_URL = f"http://localhost:{PORT}"
 PID_FILE = Path("/tmp/ddr_utah_forge_streamlit.pid")
 LOG_FILE = Path("/tmp/ddr_utah_forge_streamlit.log")
 
-SIDEBAR_PLACEHOLDER = "e.g. What caused the overpull at frac sleeve #1?"
+SIDEBAR_PLACEHOLDER = "e.g. What caused the NPT on the intermediate casing section?"
 
 
 def _wait_for_server(timeout_s: int = 30) -> bool:

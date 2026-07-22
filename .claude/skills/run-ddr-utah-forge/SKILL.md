@@ -91,7 +91,7 @@ if `data/raw/` isn't populated (it's gitignored - see README).
   "Searching..." spinner instead of results.
 - **Corpus Search's placeholder text is the fill target**, not a label
   or test-id - `driver.py` uses
-  `page.get_by_placeholder("e.g. What caused the overpull at frac sleeve #1?")`.
+  `page.get_by_placeholder("e.g. What caused the NPT on the intermediate casing section?")`.
   If that placeholder copy changes, the `search` command breaks
   silently (fill() will raise a timeout, not a clear error).
 
