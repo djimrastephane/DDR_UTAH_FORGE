@@ -7,6 +7,11 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
+try:
+    from .constants import PHASE_ORDER, PHASE_COLOURS
+except ImportError:
+    from constants import PHASE_ORDER, PHASE_COLOURS  # type: ignore[no-redef]
+
 _ui_root = Path(__file__).resolve().parents[3]
 if str(_ui_root / "src") not in sys.path:
     sys.path.insert(0, str(_ui_root / "src"))
@@ -20,17 +25,6 @@ _DECISION_RE = re.compile(
     r"action\s+item|mitigat|root\s+cause|lesson|next\s+time|prevent",
     re.I,
 )
-
-_PHASE_ORDER = ["MIRU", "COND1", "INTRM1", "INTRM2", "PROD1", "COMPZN"]
-
-_PHASE_COLOUR = {
-    "MIRU":   "#1565C0",
-    "COND1":  "#2E7D32",
-    "INTRM1": "#6A1B9A",
-    "INTRM2": "#4527A0",
-    "PROD1":  "#E65100",
-    "COMPZN": "#00695C",
-}
 
 _EV_TYPES = {
     "overpull":    ("🔴 Overpull",    "force_klbs",       "klbs",   "Max force"),
@@ -122,7 +116,7 @@ def _render_decisions(
         st.info("No explicit decision/recommendation text found in this selection.")
         return decision_rows, 0
 
-    phases_present = [p for p in _PHASE_ORDER if p in decision_rows["phase"].values]
+    phases_present = [p for p in PHASE_ORDER if p in decision_rows["phase"].values]
     if sel_phase != "ALL":
         phases_present = [sel_phase] if sel_phase in phases_present else []
 
@@ -132,7 +126,7 @@ def _render_decisions(
         if ph_rows.empty:
             continue
         ph_label  = label_phase(ph)
-        ph_colour = _PHASE_COLOUR.get(ph, "#455A64")
+        ph_colour = PHASE_COLOURS.get(ph, "#455A64")
         with st.expander(
             f"**{ph_label}** — {len(ph_rows)} entr{'y' if len(ph_rows) == 1 else 'ies'}",
             expanded=(sel_phase != "ALL" or len(phases_present) <= 2),
@@ -267,7 +261,7 @@ def page_lessons_learned(ops: pd.DataFrame, events: pd.DataFrame) -> None:
         "wellbore events and decision/recommendation text extracted from operational narratives."
     )
 
-    phases = [p for p in _PHASE_ORDER if p in ops["phase"].unique()]
+    phases = [p for p in PHASE_ORDER if p in ops["phase"].unique()]
     sel_phase = st.selectbox("Phase", ["ALL"] + phases)
     show_raw  = st.checkbox("Show source DDR excerpts", value=False)
 
