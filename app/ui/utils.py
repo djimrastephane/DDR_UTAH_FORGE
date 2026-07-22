@@ -42,8 +42,18 @@ def _apply_chart_theme(fig: go.Figure) -> go.Figure:
 
 
 def _ddr_citation(doc_id: str, page: object, shift: str = "") -> str:
-    m   = re.search(r"DDR-?(\d+)", str(doc_id), re.I)
-    ddr = f"DDR-{m.group(1)}" if m else (str(doc_id)[:20] or "—")
+    doc_id_str = str(doc_id)
+    m = re.search(r"DDR-?(\d+)", doc_id_str, re.I)
+    if m:
+        ddr = f"DDR-{m.group(1)}"
+    else:
+        # Utah FORGE doc_ids look like
+        # "UtahForge-DDR-FORGE-16A-78-32-Drilling-2020-11-11-R019-<hash>" —
+        # "DDR-(\d+)" doesn't match (letters follow "DDR-", not digits), so
+        # fall back to the report number ("R019") baked into the filename
+        # rather than an uninformative truncated doc_id.
+        m2  = re.search(r"-R(\d{2,4})-", doc_id_str)
+        ddr = f"DDR R{m2.group(1)}" if m2 else (doc_id_str[:20] or "—")
     p   = f" · p.{int(page)}" if pd.notna(page) else ""
     s   = f" · {shift}" if shift else ""
     return f"{ddr}{p}{s}"

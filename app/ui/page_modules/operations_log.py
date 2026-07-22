@@ -159,7 +159,11 @@ def _render_log_table(filtered: pd.DataFrame, has_weather: bool) -> None:
 
     avail = {k: v for k, v in cols.items() if k in filtered.columns}
     disp  = filtered[list(avail)].rename(columns=avail).copy()
-    disp["Dur (h)"] = disp["Dur (h)"].round(2)
+    # column_config's NumberColumn(format=...) is silently ignored once the
+    # dataframe is wrapped in a pandas Styler (needed below for NPT row
+    # colouring), so format numeric columns to strings up front instead of
+    # relying on column_config for them.
+    disp["Dur (h)"] = disp["Dur (h)"].map(lambda v: f"{v:.2f}")
     if "Classification" in disp.columns:
         disp["Classification"] = disp["Classification"].map(
             {True: "Flagged NPT", False: "Normal operation"}
@@ -179,7 +183,7 @@ def _render_log_table(filtered: pd.DataFrame, has_weather: bool) -> None:
         "Date":      st.column_config.TextColumn(width="small"),
         "Start":     st.column_config.TextColumn(width="small"),
         "End":       st.column_config.TextColumn(width="small"),
-        "Dur (h)":   st.column_config.NumberColumn(format="%.2f", width="small"),
+        "Dur (h)":   st.column_config.TextColumn(width="small"),
         "Phase":     st.column_config.TextColumn(width="small"),
         "Op type":   st.column_config.TextColumn(width="medium"),
         "Classification": st.column_config.TextColumn(width="medium"),
@@ -187,8 +191,10 @@ def _render_log_table(filtered: pd.DataFrame, has_weather: bool) -> None:
         "Operation": st.column_config.TextColumn(width="large"),
     }
     if "Wind (kn)" in disp.columns:
-        col_cfg["Wind (kn)"] = st.column_config.NumberColumn(format="%.0f", width="small")
-        col_cfg["Wave (ft)"] = st.column_config.NumberColumn(format="%.1f", width="small")
+        disp["Wind (kn)"] = disp["Wind (kn)"].map(lambda v: f"{v:.0f}" if pd.notna(v) else "")
+        disp["Wave (ft)"] = disp["Wave (ft)"].map(lambda v: f"{v:.1f}" if pd.notna(v) else "")
+        col_cfg["Wind (kn)"] = st.column_config.TextColumn(width="small")
+        col_cfg["Wave (ft)"] = st.column_config.TextColumn(width="small")
 
     st.dataframe(
         disp.style.apply(_row_colour, axis=1),
