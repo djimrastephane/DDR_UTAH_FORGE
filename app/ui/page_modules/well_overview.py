@@ -53,7 +53,12 @@ def build_npt_interval_chart(day_ops: pd.DataFrame, date_label: str) -> "go.Figu
             offset += 24
             sh_adj  = sh + offset
 
-        eh_adj = (24.0 + offset) if eh == 0.0 else (eh + offset)
+        # End time crosses midnight relative to *this row's* own start whenever
+        # the naive end hour lands before it (not just the literal "00:00"
+        # case — a shift ending at 06:00, 01:30, etc. crosses midnight too).
+        eh_adj = eh + offset
+        if eh_adj < sh_adj:
+            eh_adj += 24.0
 
         starts.append(sh_adj)
         ends.append(eh_adj)
