@@ -9,11 +9,11 @@ import plotly.graph_objects as go
 import streamlit as st
 
 try:
-    from .constants import WELL_COLOURS, PHASE_ORDER, PHASE_COLOURS
+    from .constants import WELL_COLOURS, PHASE_ORDER
     from .loaders import load_field_ops, load_field_headers, load_well_metadata
     from .utils import _apply_chart_theme
 except ImportError:
-    from constants import WELL_COLOURS, PHASE_ORDER, PHASE_COLOURS           # type: ignore[no-redef]
+    from constants import WELL_COLOURS, PHASE_ORDER                          # type: ignore[no-redef]
     from loaders import load_field_ops, load_field_headers, load_well_metadata  # type: ignore[no-redef]
     from utils import _apply_chart_theme                                      # type: ignore[no-redef]
 
@@ -153,7 +153,7 @@ def _render_phase_performance(ops: pd.DataFrame) -> None:
     fig.add_trace(go.Bar(
         x=ps["label"], y=ps["prod_h"],
         name="Productive time",
-        marker_color=[PHASE_COLOURS.get(p, "#aaa") for p in ps["phase"]],
+        marker_color="#43A047",
         opacity=0.85,
         hovertemplate="%{x}<br>Productive: %{y:,.0f} hrs<extra></extra>",
     ))
