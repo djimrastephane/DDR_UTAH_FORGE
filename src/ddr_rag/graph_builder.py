@@ -295,6 +295,14 @@ def graph_to_json(
     }
 
 
+def _filename_prefix(window_size: int) -> str:
+    """"" for the same-row window (0), preserving the existing graph.json/
+    graph.graphml/nodes.parquet/edges.parquet names, or "w{N}_" for any
+    wider window — matches app/ui/loaders.py's load_graph(), which asks for
+    "w2_graph.json" when the UI's "Sequential (+/-2 rows)" mode is selected."""
+    return "" if window_size == 0 else f"w{window_size}_"
+
+
 def save_graph(
     G: "nx.Graph",
     phase: str,
@@ -304,23 +312,24 @@ def save_graph(
     import pandas as pd
 
     out_dir.mkdir(parents=True, exist_ok=True)
+    prefix = _filename_prefix(int(G.graph.get("window_size", 0)))
 
     payload = graph_to_json(G, phase, ops_df)
-    (out_dir / "graph.json").write_text(
+    (out_dir / f"{prefix}graph.json").write_text(
         json.dumps(payload, indent=2, default=str), encoding="utf-8"
     )
 
-    nx.write_graphml(G, str(out_dir / "graph.graphml"))
+    nx.write_graphml(G, str(out_dir / f"{prefix}graph.graphml"))
 
     node_records = []
     for nid, attrs in G.nodes(data=True):
         node_records.append({"node_id": nid, **attrs})
-    pd.DataFrame(node_records).to_parquet(out_dir / "nodes.parquet", index=False)
+    pd.DataFrame(node_records).to_parquet(out_dir / f"{prefix}nodes.parquet", index=False)
 
     edge_records = []
     for u, v, attrs in G.edges(data=True):
         edge_records.append({"source": u, "target": v, **attrs})
-    pd.DataFrame(edge_records).to_parquet(out_dir / "edges.parquet", index=False)
+    pd.DataFrame(edge_records).to_parquet(out_dir / f"{prefix}edges.parquet", index=False)
 
 
 def build_and_save_all(
@@ -350,7 +359,8 @@ def build_and_save_all(
         })
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "summary.json").write_text(
+    summary_prefix = _filename_prefix(int(kwargs.get("window_size", DEFAULT_WINDOW_SIZE)))
+    (out_dir / f"{summary_prefix}summary.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8"
     )
     return graphs
