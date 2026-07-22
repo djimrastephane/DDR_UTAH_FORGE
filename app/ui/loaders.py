@@ -483,13 +483,17 @@ def _run_search(
             chunk_text = str(chunks.loc[cid].get("chunk_text", ""))
         elif "chunk_text" in m_row:
             chunk_text = str(m_row["chunk_text"])
+        page_start = m_row.get("page_start")
         results.append({
             "rank":          len(results) + 1,
             "score":         round(float(score), 4),
             "doc_id":        doc_id,
             "report_date":   str(m_row.get("report_date", "")),
+            "report_no":     str(m_row.get("report_no", "") or ""),
             "wellbore":      str(m_row.get("wellbore", "")),
             "section_title": str(m_row.get("section_title", "")),
+            "page_start":    int(page_start) if pd.notna(page_start) else None,
+            "is_table":      bool(m_row.get("is_table", False)),
             "chunk_text":    chunk_text,
             "snippet":       chunk_text[:300],
         })

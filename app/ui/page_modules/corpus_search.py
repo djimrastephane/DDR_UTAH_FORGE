@@ -41,7 +41,15 @@ def _render_result_card(r: dict, keywords: list[str]) -> None:
     else:
         badge = "🔴 Weak match"
 
-    ddr_label     = f"DDR {report_no}" if report_no else doc_id[-20:]
+    if report_no:
+        ddr_label = f"DDR {report_no}"
+    else:
+        # report_no should be populated for every real chunk (see
+        # loaders._run_search) — this is a last-resort fallback for
+        # malformed/legacy metadata, so prefer a readable prefix over a
+        # slice that can land mid-token.
+        m = re.search(r"-R(\d{2,4})-", doc_id)
+        ddr_label = f"DDR R{m.group(1)}" if m else doc_id[:20]
     page_label    = f" · page {page}"  if page else ""
     section_label = f" · {section}"    if section and section.lower() != "unknown" else ""
     table_label   = " · 📊 table"      if is_table else ""
