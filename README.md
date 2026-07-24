@@ -24,6 +24,41 @@ Built for **Utah FORGE well FORGE-16A-78-32** (Frontier Rig 16, Oct 2020 – Jan
 ![Operational Graph](docs/screenshots/operational_graph.png)
 </details>
 
+## For Drilling & Completion Engineers
+
+No programming needed to use this. This section is everything you need — no prior experience with Python, RAG, or this repository assumed.
+
+**A fair question before opening this: why not just read the 76 reports, or Ctrl+F for "stuck pipe"?**
+
+Because the words you'd search for aren't always the words the next report uses. Somewhere in this well's real archive, an attempt to set packers on a BHA that failed to seat led directly to a fishing run the next day — but the two reports describe it in completely different language: one talks about pressure readings and a ball that never seated, the next about picking up a fishing assembly. Read back-to-back, a person catches that. A keyword search across 76 PDFs might not, because it only matches spelling — and reading all 76 by hand, every time you have a question, doesn't scale.
+
+This dashboard reads all 76 reports once and gives you four views instead:
+
+- **Campaign Summary** — the executive rollup: total days, NPT time, key events, at a glance
+- **Well Performance Chart** — depth vs. time across the whole campaign, with NPT called out
+- **NPT Intelligence** — every non-productive-time event, grouped by likely cause (equipment, fishing, wellbore condition, weather, …)
+- **Corpus Search** — ask a question in plain English (e.g. "when did we lose circulation") and it finds the relevant report passages by meaning, not just exact wording
+
+**Opening the dashboard:** someone (an engineer already set up on this repo, or you, following the [Setup](#setup) steps once) runs:
+
+```bash
+bash scripts/run_ddr_intelligence.sh
+```
+
+That opens the dashboard in your browser at `http://localhost:8502`. No further commands needed — click between the four pages above using the sidebar.
+
+**What this replaces, and what it doesn't.** This tool doesn't replace your judgment on what an event means or what to do about it — it replaces the search. Its job is to put the right report passage in front of you fast enough that you're not waiting on memory, or on opening 76 PDFs one at a time. Deciding whether a packer failure changes tomorrow's plan is still yours to make.
+
+**Before you cite a number from it, read this.** Everything on screen is pulled automatically from scanned PDF reports by pattern-matching — not by a human re-reading each one — so it can be wrong in specific ways:
+
+- NPT causes are the tool's best guess from the operator's free-text write-up, not an official trouble code
+- There's no drilling plan or offset well behind the "Expected"/"Linear reference" lines — they're neutral baselines, not a target you were supposed to hit
+- Numbers pulled from scanned tables (BHA, mud, survey) are more error-prone than numbers from the report header or narrative text
+
+Full detail on all of this is in [Limitations](#limitations) below — worth a skim before this tool's output goes into a real decision.
+
+**Want to understand how it works, not just use it?** This pipeline is the real, working system referenced as the "Companion Pipeline" in [*Building Industrial RAG Systems from Daily Drilling Reports*](https://github.com/djimrastephane/ddr-rag-book) — a book that builds the same kind of system from scratch, over this well's real reports, assuming no programming background going in.
+
 ## Architecture
 
 Two layers: a **report-agnostic PDF pipeline** (`src/rag_pdf/`) that turns any scanned PDF into clean text, tables, and a search index, and a **Utah FORGE-specific domain layer** (`src/ddr_rag/`) built on top of it that knows what a DDR looks like and pulls structured drilling facts out of it.
