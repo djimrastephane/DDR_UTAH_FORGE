@@ -8,6 +8,8 @@ Point it at the raw PDF reports for a well, and it extracts the operations table
 
 Built for **Utah FORGE well FORGE-16A-78-32** (Frontier Rig 16, Oct 2020 – Jan 2021, 76 reports). The extraction layer is tuned to this well's specific report template; see [Limitations](#limitations) before trusting it on a different one.
 
+Want to learn how a system like this is actually built, no programming background required? This pipeline is the real "Companion Pipeline" referenced in [*Building Industrial RAG Systems from Daily Drilling Reports*](https://github.com/djimrastephane/ddr-rag-book), a book that builds the same kind of system from scratch over this well's real reports.
+
 ## What it looks like
 
 | Campaign Summary | Well Performance Chart |
