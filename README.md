@@ -94,10 +94,28 @@ The filename QA/QC layer supports the existing Utah FORGE filenames, including c
 
 ## Setup
 
+Requires Python >=3.11 (see `pyproject.toml`).
+
+**venv:**
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+```
+
+**conda:**
+
+```bash
+conda create -n ddr-utah-forge python=3.11 -y
+conda activate ddr-utah-forge
+pip install -r requirements.txt
+```
+
+Verify the environment with the repo's preflight check:
+
+```bash
+python scripts/check_environment.py --strict
 ```
 
 ## Validate Raw PDFs
